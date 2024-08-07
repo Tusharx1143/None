@@ -1,0 +1,73 @@
+### Explanation and Validation
+
+#### How It Works
+
+1. **Retry Logic:**
+   - The retry logic attempts to reconnect multiple times with increasing delays (exponential backoff), making it robust against prolonged downtimes. This ensures that if the PlainID admin URL is temporarily unavailable (even for extended periods like 10 minutes or an hour), the system will keep trying to reconnect at increasing intervals.
+   - The `make_request_with_retry` function in `rest_utils.py` manages the retry mechanism. It is used by the `do_post` and `do_put` functions to ensure all HTTP requests to the PlainID admin URL benefit from this robust retry logic.
+
+2. **Health Check Mechanism:**
+   - The health check mechanism periodically checks the admin URL and attempts to reconnect if it is down.
+   - The `check_admin_url` function in `rest_server.py` uses `do_post` to send a health check request to the admin URL. If the URL is down, the system will keep retrying to connect.
+   - The `run_health_checks` function runs in a separate thread to continuously monitor the admin URL's health and attempt to reconnect if it is found to be unavailable.
+
+#### Jira Task Validation
+
+**Jira Description:**
+"When the PAP is restarted the admin URL goes offline for a short time. When this happens the management service throws exceptions and doesn't seem to recover even after the PAP recovers. Need to look into why this is and ensure the management service auto recovers."
+
+**How the Changes Address the Jira Description:**
+
+1. **Auto-Recovery Mechanism:**
+   - The retry logic ensures that the management service will keep attempting to reconnect to the admin URL, even if it goes offline for an extended period. This prevents the service from failing irrecoverably when the PAP is restarted and the admin URL is temporarily unavailable.
+
+2. **Exception Handling and Logging:**
+   - The retry mechanism includes exception handling that logs warnings and errors appropriately, providing visibility into the retry attempts and any issues encountered.
+
+3. **Continuous Monitoring:**
+   - The health check mechanism continuously monitors the admin URL, ensuring that the service attempts to reconnect as soon as the URL becomes available again.
+
+### Summary for Your Manager
+
+**Objective:**
+- Ensure the management service can automatically recover when the PlainID admin URL goes offline for extended periods.
+
+**Changes Made:**
+
+1. **Added Retry Logic in `rest_utils.py`:**
+   - Implemented `make_request_with_retry` to handle retries with exponential backoff and jitter.
+   - Modified `do_post` and `do_put` functions to use this retry logic.
+
+2. **Updated `rest_server.py`:**
+   - Ensured all interactions with the PlainID admin URL use the retry-enabled `do_post` and `do_put`.
+   - Added health check functionality to periodically verify the availability of the PlainID admin URL.
+
+**How It Works:**
+- The retry logic attempts to reconnect multiple times with increasing delays, making it robust against prolonged downtimes.
+- The health check mechanism periodically checks the admin URL and attempts to reconnect if it is down.
+
+**Validation Against Jira Description:**
+- The implemented changes ensure that the management service does not throw exceptions and fail irrecoverably when the admin URL goes offline. Instead, it keeps retrying and recovers automatically once the PAP and admin URL are back online.
+
+**Testing:**
+
+1. **Unit Tests:**
+   - Verified the retry logic in `do_post` and `do_put`.
+   - Simulated different scenarios to ensure retries work as expected.
+
+2. **Integration Tests:**
+   - Tested the `/authenticate` endpoint to ensure it handles valid and invalid credentials correctly.
+
+**How to Verify:**
+
+1. **Run Unit Tests:**
+   ```bash
+   python -m unittest test_rest_utils.py
+   ```
+
+2. **Run Integration Tests:**
+   ```bash
+   python -m unittest test_rest_server.py
+   ```
+
+By following this explanation, you can confidently explain to your manager how the changes meet the requirements of the Jira task and ensure the management service's reliability and robustness.
