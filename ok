@@ -10,35 +10,16 @@ SELECT
    [12Y1819D],
    [12Y1518E],
    [12Y1818D],
-   SUM(
-       CASE WHEN [12B1501C] != '' THEN 1 ELSE 0 END
-   ) +
-   SUM(
-       CASE WHEN [12B1701B] != '' THEN 1 ELSE 0 END
-   ) +
-   SUM(
-       CASE WHEN [12B1500B] != '' THEN 1 ELSE 0 END
-   ) +
-   SUM(
-       CASE WHEN [12B1800A] != '' THEN 1 ELSE 0 END
-   ) +
-   SUM(
-       CASE WHEN [12Y1520E] != '' THEN 1 ELSE 0 END
-   ) +
-   SUM(
-       CASE WHEN [12Y1820D] != '' THEN 1 ELSE 0 END
-   ) +
-   SUM(
-       CASE WHEN [12Y1519E] != '' THEN 1 ELSE 0 END
-   ) +
-   SUM(
-       CASE WHEN [12Y1819D] != '' THEN 1 ELSE 0 END
-   ) +
-   SUM(
-       CASE WHEN [12Y1518E] != '' THEN 1 ELSE 0 END
-   ) +
-   SUM(
-       CASE WHEN [12Y1818D] != '' THEN 1 ELSE 0 END
+   (CASE WHEN [12B1501C] != '' THEN 1 ELSE 0 END +
+    CASE WHEN [12B1701B] != '' THEN 1 ELSE 0 END +
+    CASE WHEN [12B1500B] != '' THEN 1 ELSE 0 END +
+    CASE WHEN [12B1800A] != '' THEN 1 ELSE 0 END +
+    CASE WHEN [12Y1520E] != '' THEN 1 ELSE 0 END +
+    CASE WHEN [12Y1820D] != '' THEN 1 ELSE 0 END +
+    CASE WHEN [12Y1519E] != '' THEN 1 ELSE 0 END +
+    CASE WHEN [12Y1819D] != '' THEN 1 ELSE 0 END +
+    CASE WHEN [12Y1518E] != '' THEN 1 ELSE 0 END +
+    CASE WHEN [12Y1818D] != '' THEN 1 ELSE 0 END
    ) AS [Occupied Seats]
 FROM T*
 GROUP BY 
