@@ -10,4 +10,5 @@ SELECT
     CASE WHEN [28 (Wed)] != '' THEN 1 ELSE 0 END +
     CASE WHEN [29 (Thu)] != '' THEN 1 ELSE 0 END +
     CASE WHEN [30 (Fri)] != '' THEN 1 ELSE 0 END) AS [WFO Count]
-FROM T1
+FROM T*
+WHERE Names != 'Seats Utilized'
