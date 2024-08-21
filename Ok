@@ -1,13 +1,29 @@
 SELECT 
-   Names,
-   [26 (Mon)],
-   [27 (Tue)],
-   [28 (Wed)],
-   [29 (Thu)],
-   [30 (Fri)],
-   (CASE WHEN [26 (Mon)] IS NOT NULL AND [26 (Mon)] != '' THEN 1 ELSE 0 END +
-    CASE WHEN [27 (Tue)] IS NOT NULL AND [27 (Tue)] != '' THEN 1 ELSE 0 END +
-    CASE WHEN [28 (Wed)] IS NOT NULL AND [28 (Wed)] != '' THEN 1 ELSE 0 END +
-    CASE WHEN [29 (Thu)] IS NOT NULL AND [29 (Thu)] != '' THEN 1 ELSE 0 END +
-    CASE WHEN [30 (Fri)] IS NOT NULL AND [30 (Fri)] != '' THEN 1 ELSE 0 END) AS [WFO Count]
-FROM T*
+   T1.Names,
+   T1.[26 (Mon)],
+   T1.[27 (Tue)],
+   T1.[28 (Wed)],
+   T1.[29 (Thu)],
+   T1.[30 (Fri)],
+   (CASE WHEN T1.[26 (Mon)] != '' THEN 1 ELSE 0 END +
+    CASE WHEN T1.[27 (Tue)] != '' THEN 1 ELSE 0 END +
+    CASE WHEN T1.[28 (Wed)] != '' THEN 1 ELSE 0 END +
+    CASE WHEN T1.[29 (Thu)] != '' THEN 1 ELSE 0 END +
+    CASE WHEN T1.[30 (Fri)] != '' THEN 1 ELSE 0 END) AS [WFO Count],
+   T2.[Seats Utilized on Mon],
+   T2.[Seats Utilized on Tue],
+   T2.[Seats Utilized on Wed],
+   T2.[Seats Utilized on Thu],
+   T2.[Seats Utilized on Fri]
+FROM T1
+LEFT JOIN (
+   SELECT
+      'Seats Utilized' AS Names,
+      SUM(CASE WHEN [26 (Mon)] != '' THEN 1 ELSE 0 END) AS [Seats Utilized on Mon],
+      SUM(CASE WHEN [27 (Tue)] != '' THEN 1 ELSE 0 END) AS [Seats Utilized on Tue],
+      SUM(CASE WHEN [28 (Wed)] != '' THEN 1 ELSE 0 END) AS [Seats Utilized on Wed],
+      SUM(CASE WHEN [29 (Thu)] != '' THEN 1 ELSE 0 END) AS [Seats Utilized on Thu],
+      SUM(CASE WHEN [30 (Fri)] != '' THEN 1 ELSE 0 END) AS [Seats Utilized on Fri]
+   FROM T1
+   WHERE T1.Names != 'Seats Utilized'
+) AS T2 ON T1.Names = T2.Names
