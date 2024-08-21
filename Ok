@@ -1,66 +1,69 @@
-Let's address both of your requirements.
+Given that `COUNTIF` is not available in the SQL-like environment provided by the Table Transformer macro in Confluence, let's try a different approach using conditional aggregation.
 
-### 1. Counting "WFO Count" (Work From Office Days)
+### 1. Calculating "WFO Count" (Work From Office Days)
+To count the number of days each user comes to the office, we'll use `SUM` with `CASE` statements to check each cell for a non-empty value.
 
-You want to count how many days each user is coming to the office based on the seat numbers they enter in the respective date columns. Here's how you can do it:
-
-#### Query for "WFO Count" Column
+#### Updated Query for "WFO Count" Column
 
 ```sql
 SELECT 
    Names,
-   COUNTIF([26 (Mon)] != '') + 
-   COUNTIF([27 (Tue)] != '') + 
-   COUNTIF([28 (Wed)] != '') + 
-   COUNTIF([29 (Thu)] != '') + 
-   COUNTIF([30 (Fri)] != '') AS [WFO Count]
+   [26 (Mon)],
+   [27 (Tue)],
+   [28 (Wed)],
+   [29 (Thu)],
+   [30 (Fri)],
+   (CASE WHEN [26 (Mon)] != '' THEN 1 ELSE 0 END +
+    CASE WHEN [27 (Tue)] != '' THEN 1 ELSE 0 END +
+    CASE WHEN [28 (Wed)] != '' THEN 1 ELSE 0 END +
+    CASE WHEN [29 (Thu)] != '' THEN 1 ELSE 0 END +
+    CASE WHEN [30 (Fri)] != '' THEN 1 ELSE 0 END) AS [WFO Count]
 FROM T*
-GROUP BY Names
+ORDER BY Names
 ```
 
 ### Explanation:
-- **COUNTIF for Each Date**: This query counts the non-empty entries (seat numbers) for each date column and sums them up to get the total number of days each user came to the office.
-- **GROUP BY Names**: This groups the results by the user names, ensuring that the count is per user.
+- **CASE Statements**: Each `CASE` checks if the cell is not empty (`!= ''`). If true, it counts as `1`.
+- **SUM**: The total `WFO Count` for each user is the sum of these `1`s across all the days in the week.
 
-### 2. Calculating Seat Utilization Percentage for Each Week
+### 2. Calculating Weekly Seat Utilization Percentage
 
-You want to calculate the percentage of seat utilization for each week. Here's how you can do it:
+Now, let's calculate the percentage of seats utilized for each day and average that to get a weekly utilization percentage.
 
-#### Query for Weekly Seat Utilization Percentage
-
-For the sake of example, assume there are 10 seats available each day:
+#### Updated Query for Weekly Seat Utilization Percentage
 
 ```sql
 SELECT 
-   [26 (Mon)] AS Day1,
-   [27 (Tue)] AS Day2,
-   [28 (Wed)] AS Day3,
-   [29 (Thu)] AS Day4,
-   [30 (Fri)] AS Day5,
-   (SUM(CASE WHEN [26 (Mon)] != '' THEN 1 ELSE 0 END + 
-           CASE WHEN [27 (Tue)] != '' THEN 1 ELSE 0 END + 
-           CASE WHEN [28 (Wed)] != '' THEN 1 ELSE 0 END + 
-           CASE WHEN [29 (Thu)] != '' THEN 1 ELSE 0 END + 
-           CASE WHEN [30 (Fri)] != '' THEN 1 ELSE 0 END) / (5 * 10)) * 100 AS [Weekly Utilization Percentage]
+   [26 (Mon)],
+   [27 (Tue)],
+   [28 (Wed)],
+   [29 (Thu)],
+   [30 (Fri)],
+   (SUM(CASE WHEN [26 (Mon)] != '' THEN 1 ELSE 0 END +
+           CASE WHEN [27 (Tue)] != '' THEN 1 ELSE 0 END +
+           CASE WHEN [28 (Wed)] != '' THEN 1 ELSE 0 END +
+           CASE WHEN [29 (Thu)] != '' THEN 1 ELSE 0 END +
+           CASE WHEN [30 (Fri)] != '' THEN 1 ELSE 0 END) / (5 * 10.0)) * 100 AS [Weekly Utilization Percentage]
 FROM T*
+WHERE Names != 'Seats Utilized'
 ```
 
 ### Explanation:
-- **Seat Utilization Calculation**: For each day, the query checks if the seat is occupied (`!= ''`), counts it as `1`, and sums up for the week.
-- **Percentage Calculation**: This is then divided by the total available seats for the week (5 days * 10 seats) and multiplied by 100 to get the percentage.
+- **SUM and CASE**: This sums up the number of seats occupied each day.
+- **Division**: We divide by the total available seats for the week (in this case, 5 days * 10 seats) to calculate the percentage.
+- **Multiplication by 100**: Converts the ratio into a percentage.
+- **WHERE Clause**: The `WHERE` clause excludes the "Seats Utilized" row from the calculation.
 
-### Steps to Implement:
+### Implementation Steps:
 
-1. **Add "WFO Count" Column**:
-   - Insert the query for the "WFO Count" into your existing table or macro.
-   - Adjust the date columns (`[26 (Mon)]`, `[27 (Tue)]`, etc.) as needed for different weeks.
+1. **Add the Queries to Your Table**:
+   - Insert the query for the "WFO Count" calculation into your table.
+   - Similarly, add the query for calculating the weekly seat utilization percentage.
 
-2. **Add Weekly Utilization Percentage**:
-   - Insert the query for the weekly seat utilization percentage into your table.
-   - Adjust the seat count (if different from 10) and the date columns for each week.
+2. **Test the Output**:
+   - After implementing the queries, ensure that the table correctly displays the "WFO Count" for each user and the weekly seat utilization percentage.
 
-3. **Test and Adjust**:
-   - Ensure both queries work with the actual data.
-   - Adjust the formula if the number of days or seats changes.
+3. **Integrate into the Existing Table**:
+   - These queries should integrate smoothly into your existing table, keeping the layout intact while adding the new calculated columns.
 
-This method allows you to dynamically calculate how many days each user comes to the office and the seat utilization for each week, ensuring accurate and automated reporting. Let me know if you need further adjustments!
+This approach should work within the constraints of Confluence’s Table Transformer macro and give you the expected output in your current table layout. Let me know if this resolves the issue!
