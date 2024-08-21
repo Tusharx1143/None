@@ -1,56 +1,13 @@
-Yes, using the "Filter Table" macro in Confluence might be a more straightforward approach for calculating "WFO Count" and seat utilization percentage without causing the table to become jumbled. Below is a guide on how you can achieve this using the "Filter Table" and "Table Transformer" macros.
-
-### Step 1: Set Up the WFO Count
-1. **Insert a "Filter Table" Macro**:
-   - Wrap your existing table with a "Filter Table" macro. This will allow you to manipulate the data easily.
-
-2. **Calculate the WFO Count**:
-   - Within the "Filter Table" macro, add a "Table Transformer" macro.
-   - Use the following SQL-like query in the "Table Transformer" macro to calculate the WFO Count for each user:
-
-```sql
 SELECT 
-   T1.Names,
-   T1.[26 (Mon)],
-   T1.[27 (Tue)],
-   T1.[28 (Wed)],
-   T1.[29 (Thu)],
-   T1.[30 (Fri)],
-   COUNTIF(T1.[26 (Mon)] != '') + 
-   COUNTIF(T1.[27 (Tue)] != '') + 
-   COUNTIF(T1.[28 (Wed)] != '') + 
-   COUNTIF(T1.[29 (Thu)] != '') + 
-   COUNTIF(T1.[30 (Fri)] != '') AS [WFO Count]
+   Names,
+   [26 (Mon)],
+   [27 (Tue)],
+   [28 (Wed)],
+   [29 (Thu)],
+   [30 (Fri)],
+   (CASE WHEN [26 (Mon)] != '' THEN 1 ELSE 0 END +
+    CASE WHEN [27 (Tue)] != '' THEN 1 ELSE 0 END +
+    CASE WHEN [28 (Wed)] != '' THEN 1 ELSE 0 END +
+    CASE WHEN [29 (Thu)] != '' THEN 1 ELSE 0 END +
+    CASE WHEN [30 (Fri)] != '' THEN 1 ELSE 0 END) AS [WFO Count]
 FROM T1
-GROUP BY T1.Names, T1.[26 (Mon)], T1.[27 (Tue)], T1.[28 (Wed)], T1.[29 (Thu)], T1.[30 (Fri)]
-```
-
-### Step 2: Calculate Seat Utilization Percentage
-1. **Add Another "Table Transformer" Macro**:
-   - Below your main table, insert another "Table Transformer" macro to calculate the weekly seat utilization percentage.
-
-2. **Use the Following Query**:
-
-```sql
-SELECT 
-   ROUND((SUM(CASE WHEN [26 (Mon)] != '' THEN 1 ELSE 0 END +
-           CASE WHEN [27 (Tue)] != '' THEN 1 ELSE 0 END +
-           CASE WHEN [28 (Wed)] != '' THEN 1 ELSE 0 END +
-           CASE WHEN [29 (Thu)] != '' THEN 1 ELSE 0 END +
-           CASE WHEN [30 (Fri)] != '' THEN 1 ELSE 0 END) / (5.0 * 10)) * 100, 2) AS [Weekly Utilization Percentage]
-FROM T1
-```
-
-### Explanation:
-- **COUNTIF and CASE**: The `COUNTIF` function checks each cell for non-empty entries, while the `CASE` statements are used to calculate the seat utilization.
-- **ROUND Function**: Ensures the utilization percentage is rounded to two decimal places for clarity.
-
-### Step 3: Testing and Adjustments
-- **Test the Output**: Ensure that each calculation is accurate and the table layout remains intact.
-- **Adjust as Necessary**: If the queries do not yield expected results, tweak the column references or formulas.
-
-### Final Notes:
-- **Ensure Macro Compatibility**: The "Filter Table" and "Table Transformer" macros should work well together, but the order and setup matter.
-- **Manual Checks**: After setting up the queries, manually verify the results for a few entries to ensure the calculations are correct.
-
-This approach should keep your table organized while allowing for the necessary calculations using the Confluence tools available. Let me know if this method works better for you!
