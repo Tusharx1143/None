@@ -1,13 +1,22 @@
 SELECT 
    Names,
-   [26 (Mon)],
-   [27 (Tue)],
-   [28 (Wed)],
-   [29 (Thu)],
-   [30 (Fri)],
-   (CASE WHEN [26 (Mon)] != '' THEN 1 ELSE 0 END +
-    CASE WHEN [27 (Tue)] != '' THEN 1 ELSE 0 END +
-    CASE WHEN [28 (Wed)] != '' THEN 1 ELSE 0 END +
-    CASE WHEN [29 (Thu)] != '' THEN 1 ELSE 0 END +
-    CASE WHEN [30 (Fri)] != '' THEN 1 ELSE 0 END) AS [WFO Count]
-FROM T1
+   [26],
+   [27],
+   [28],
+   [29],
+   [30],
+   (CASE WHEN [26] != '' THEN 1 ELSE 0 END +
+    CASE WHEN [27] != '' THEN 1 ELSE 0 END +
+    CASE WHEN [28] != '' THEN 1 ELSE 0 END +
+    CASE WHEN [29] != '' THEN 1 ELSE 0 END +
+    CASE WHEN [30] != '' THEN 1 ELSE 0 END
+   ) AS [Seats Occupied]
+FROM T*
+GROUP BY 
+   Names,
+   [26],
+   [27],
+   [28],
+   [29],
+   [30]
+ORDER BY Names
