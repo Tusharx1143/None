@@ -1,0 +1,66 @@
+Let's address both of your requirements.
+
+### 1. Counting "WFO Count" (Work From Office Days)
+
+You want to count how many days each user is coming to the office based on the seat numbers they enter in the respective date columns. Here's how you can do it:
+
+#### Query for "WFO Count" Column
+
+```sql
+SELECT 
+   Names,
+   COUNTIF([26 (Mon)] != '') + 
+   COUNTIF([27 (Tue)] != '') + 
+   COUNTIF([28 (Wed)] != '') + 
+   COUNTIF([29 (Thu)] != '') + 
+   COUNTIF([30 (Fri)] != '') AS [WFO Count]
+FROM T*
+GROUP BY Names
+```
+
+### Explanation:
+- **COUNTIF for Each Date**: This query counts the non-empty entries (seat numbers) for each date column and sums them up to get the total number of days each user came to the office.
+- **GROUP BY Names**: This groups the results by the user names, ensuring that the count is per user.
+
+### 2. Calculating Seat Utilization Percentage for Each Week
+
+You want to calculate the percentage of seat utilization for each week. Here's how you can do it:
+
+#### Query for Weekly Seat Utilization Percentage
+
+For the sake of example, assume there are 10 seats available each day:
+
+```sql
+SELECT 
+   [26 (Mon)] AS Day1,
+   [27 (Tue)] AS Day2,
+   [28 (Wed)] AS Day3,
+   [29 (Thu)] AS Day4,
+   [30 (Fri)] AS Day5,
+   (SUM(CASE WHEN [26 (Mon)] != '' THEN 1 ELSE 0 END + 
+           CASE WHEN [27 (Tue)] != '' THEN 1 ELSE 0 END + 
+           CASE WHEN [28 (Wed)] != '' THEN 1 ELSE 0 END + 
+           CASE WHEN [29 (Thu)] != '' THEN 1 ELSE 0 END + 
+           CASE WHEN [30 (Fri)] != '' THEN 1 ELSE 0 END) / (5 * 10)) * 100 AS [Weekly Utilization Percentage]
+FROM T*
+```
+
+### Explanation:
+- **Seat Utilization Calculation**: For each day, the query checks if the seat is occupied (`!= ''`), counts it as `1`, and sums up for the week.
+- **Percentage Calculation**: This is then divided by the total available seats for the week (5 days * 10 seats) and multiplied by 100 to get the percentage.
+
+### Steps to Implement:
+
+1. **Add "WFO Count" Column**:
+   - Insert the query for the "WFO Count" into your existing table or macro.
+   - Adjust the date columns (`[26 (Mon)]`, `[27 (Tue)]`, etc.) as needed for different weeks.
+
+2. **Add Weekly Utilization Percentage**:
+   - Insert the query for the weekly seat utilization percentage into your table.
+   - Adjust the seat count (if different from 10) and the date columns for each week.
+
+3. **Test and Adjust**:
+   - Ensure both queries work with the actual data.
+   - Adjust the formula if the number of days or seats changes.
+
+This method allows you to dynamically calculate how many days each user comes to the office and the seat utilization for each week, ensuring accurate and automated reporting. Let me know if you need further adjustments!
