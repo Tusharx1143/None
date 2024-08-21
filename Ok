@@ -5,18 +5,18 @@ SELECT
    [28],
    [29],
    [30],
-   (CASE WHEN [26] != '' THEN 1 ELSE 0 END +
-    CASE WHEN [27] != '' THEN 1 ELSE 0 END +
-    CASE WHEN [28] != '' THEN 1 ELSE 0 END +
-    CASE WHEN [29] != '' THEN 1 ELSE 0 END +
-    CASE WHEN [30] != '' THEN 1 ELSE 0 END
+   (COUNT([26]) +
+    COUNT([27]) +
+    COUNT([28]) +
+    COUNT([29]) +
+    COUNT([30])
    ) AS [Seats Occupied]
 FROM T*
 GROUP BY 
-   Names,
-   [26],
-   [27],
-   [28],
-   [29],
+   Names, 
+   [26], 
+   [27], 
+   [28], 
+   [29], 
    [30]
 ORDER BY Names
