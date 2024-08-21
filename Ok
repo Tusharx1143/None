@@ -5,9 +5,9 @@ SELECT
    [28 (Wed)],
    [29 (Thu)],
    [30 (Fri)],
-   (CASE WHEN [26 (Mon)] IS NOT NULL AND TRIM([26 (Mon)]) != '' THEN 1 ELSE 0 END +
-    CASE WHEN [27 (Tue)] IS NOT NULL AND TRIM([27 (Tue)]) != '' THEN 1 ELSE 0 END +
-    CASE WHEN [28 (Wed)] IS NOT NULL AND TRIM([28 (Wed)]) != '' THEN 1 ELSE 0 END +
-    CASE WHEN [29 (Thu)] IS NOT NULL AND TRIM([29 (Thu)]) != '' THEN 1 ELSE 0 END +
-    CASE WHEN [30 (Fri)] IS NOT NULL AND TRIM([30 (Fri)]) != '' THEN 1 ELSE 0 END) AS [WFO Count]
+   (CASE WHEN [26 (Mon)] IS NOT NULL AND [26 (Mon)] != '' THEN 1 ELSE 0 END +
+    CASE WHEN [27 (Tue)] IS NOT NULL AND [27 (Tue)] != '' THEN 1 ELSE 0 END +
+    CASE WHEN [28 (Wed)] IS NOT NULL AND [28 (Wed)] != '' THEN 1 ELSE 0 END +
+    CASE WHEN [29 (Thu)] IS NOT NULL AND [29 (Thu)] != '' THEN 1 ELSE 0 END +
+    CASE WHEN [30 (Fri)] IS NOT NULL AND [30 (Fri)] != '' THEN 1 ELSE 0 END) AS [WFO Count]
 FROM T*
