@@ -1,22 +1,58 @@
-SELECT 
-   Names,
-   [26],
-   [27],
-   [28],
-   [29],
-   [30],
-   (COUNT([26]) +
-    COUNT([27]) +
-    COUNT([28]) +
-    COUNT([29]) +
-    COUNT([30])
-   ) AS [Seats Occupied]
-FROM T*
-GROUP BY 
-   Names, 
-   [26], 
-   [27], 
-   [28], 
-   [29], 
-   [30]
-ORDER BY Names
+1. Issue with cryptography Installation (PEP 517 Error)
+Error: Could not build wheels for cryptography which use PEP 517 and cannot be installed directly.
+
+Cause: This error typically occurs due to a mismatch between the Python version, build tools, and the required development libraries (like OpenSSL).
+
+Solution:
+
+Upgraded pip, setuptools, and wheel to the latest versions.
+Installed or updated OpenSSL and Visual C++ Build Tools.
+Set environment variables to point to the correct OpenSSL paths.
+Reinstalled cryptography using precompiled wheels where possible.
+2. Python Version Compilation Warning
+Error: CRITICAL WARNING: This version of Python seems to be incorrectly compiled.
+
+Cause: Likely due to using a Python version that was either downloaded from an unofficial source or incorrectly configured.
+
+Solution:
+
+Reinstalled Python from the official Python website.
+Checked for conflicting Python installations and ensured consistent usage.
+Used virtual environments to manage dependencies separately.
+3. ImportError with Werkzeug (url_quote)
+Error: ImportError: cannot import name 'url_quote' from 'werkzeug.urls'
+
+Cause: The url_quote function was removed in recent versions of Werkzeug, leading to compatibility issues with Flask or third-party libraries that still try to import it.
+
+Solution:
+
+Downgraded Werkzeug to a compatible version (Werkzeug==2.2.3).
+Ensured Flask==2.0.0 and Werkzeug versions are compatible.
+Updated requirements.txt to reflect the compatible versions.
+4. ImportError with Jinja2 (escape)
+Error: ImportError: cannot import name 'escape' from 'jinja2'
+
+Cause: Changes in recent versions of Jinja2 that deprecated or removed certain imports.
+
+Solution:
+
+Updated Flask and Jinja2 to compatible versions.
+Ensured that requirements.txt had compatible versions of Flask (Flask>=2.0.0) and Jinja2 (Jinja2>=3.0.0).
+5. Debugging Warnings about Dynamic Code Generation
+Warning: Unable to find real location for: <attrs generated ...>
+
+Cause: These warnings are due to the use of the attrs library, which generates code dynamically at runtime, making it hard for debuggers to trace source locations.
+
+Solution:
+
+Ignored the warnings, as they do not affect the functionality.
+Upgraded the attrs library to the latest version.
+Adjusted debugger settings in PyCharm to better handle dynamically generated code.
+Summary of Changes Made
+Upgraded pip, setuptools, and wheel.
+Installed and configured OpenSSL and Visual C++ Build Tools.
+Reinstalled Python from an official source and managed versions with virtual environments.
+Aligned Flask, Jinja2, and Werkzeug to compatible versions to avoid import errors.
+Downgraded Werkzeug to a compatible version (Werkzeug==2.2.3).
+Addressed debugging warnings by updating attrs and adjusting PyCharm settings.
+By addressing these issues and making these changes, we aimed to ensure compatibility across various libraries and tools, allowing for smooth installation, execution, and debugging of your Python project. If you have any more questions or need further assistance, feel free to ask!
