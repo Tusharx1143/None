@@ -1,0 +1,256 @@
+1. config.py
+Purpose: Configuration settings, including headers, base URLs, and API credentials for interacting with PlainID and possibly other systems.
+Action: Ensure any new configuration parameters needed for RODAN integration, such as API endpoints and credentials, are defined here.
+2. entitlements.py
+Purpose: Handles fetching and processing entitlements (permissions) from RODAN.
+Action: Modify or add functions to:
+Query RODAN for entitlements based on resource and action filters.
+Filter out specific entitlements (e.g., user-based and deny entitlements).
+Extract actions and groups from the entitlements.
+3. groups.py
+Purpose: Manages the creation and deletion of dynamic groups.
+Action: Implement functions to:
+Create dynamic groups based on the groups extracted from RODAN entitlements.
+Ensure groups are created in the correct namespace (e.g., global namespace).
+4. policies.py
+Purpose: Manages the creation of policies and linking dynamic groups, actions, and resources.
+Action: Modify or add functions to:
+Create policies in PlainID for each action derived from RODAN.
+Link dynamic groups, actions, and resources to these policies.
+Handle policy creation based on application and action names (e.g., "App-ReadAccess").
+5. resources.py
+Purpose: Manages resource types and resource creation.
+Action: Add logic to:
+Create resource types in PlainID to represent RODAN resources.
+Check if the required resources exist in the asset store and create them if necessary.
+6. rest_utils.py
+Purpose: Provides utility functions for making REST API calls with retry mechanisms.
+Action: Utilize existing utility functions to handle API calls to both RODAN and PlainID.
+Ensure robust error handling and retry logic when making API calls to fetch entitlements or create policies, groups, and resources.
+
+
+
+
+
+----------------
+
+1. entitlements.py
+Changes Made: Added a new function called fetch_and_filter_entitlements.
+Purpose: This function is designed to fetch entitlements from RODAN using a given resource query string and action filter. It then filters out user-based entitlements and deny entitlements, returning only those relevant for creating policies.
+Why Needed: To automate the extraction of relevant entitlements from RODAN, which will be used to create corresponding policies in PlainID.
+2. groups.py
+Changes Made: Added a new function called create_dynamic_groups_for_entitlements.
+Purpose: This function creates dynamic groups in PlainID for each group found in the filtered RODAN entitlements.
+Why Needed: To ensure that each group with access permissions in RODAN has a corresponding dynamic group in PlainID, which can then be linked to policies. This helps maintain consistent access control between RODAN and PlainID.
+3. policies.py
+Changes Made: Added a new function called create_policies_for_entitlements.
+Purpose: This function creates policies in PlainID based on the actions specified in the RODAN entitlements. It uses the application name and action to generate policy names and descriptions, and links these policies with the appropriate namespace.
+Why Needed: To automate the creation of policies in PlainID that mirror the access controls defined in RODAN. This ensures that actions allowed in RODAN are consistently enforced in PlainID.
+4. resources.py
+Changes Made: Added a new function called create_resources_for_entitlements.
+Purpose: This function creates resources in the PlainID Asset Store that correspond to RODAN resources mentioned in the entitlements.
+Why Needed: To replicate the resources managed in RODAN within PlainID, ensuring that policies can correctly link to the actual resources users are allowed to access.
+5. rest_utils.py
+Changes Made: Added a new function called make_request_with_retry_and_logging.
+Purpose: This utility function provides a standardized way to make REST API requests with retry logic and logging. It handles network issues and transient errors by retrying requests and logging outcomes.
+Why Needed: To improve the reliability of API calls made to RODAN and PlainID during the automation process. This ensures that temporary network failures or server errors do not disrupt the policy creation process.
+Overall Purpose of Changes:
+Automate Policy Creation: The new functions automate the end-to-end process of fetching entitlements from RODAN, creating dynamic groups, and establishing policies in PlainID that reflect those entitlements. This reduces manual intervention and ensures consistency across access control systems.
+
+Consistency and Security: By mirroring RODAN's access controls within PlainID, the changes ensure that users and groups have the same permissions across different systems, maintaining consistent security policies.
+
+Scalability and Maintainability: Introducing these changes as new functions allows for modular and scalable code that can easily be maintained and updated without impacting existing functionalities. This approach ensures backward compatibility and minimizes the risk of introducing bugs into the current system.
+
+Error Handling and Robustness: Using the rest_utils.py functions for API calls ensures that the system is resilient to temporary failures, with robust error handling and retry mechanisms to maintain a stable integration between RODAN and PlainID.
+
+
+
+1. entitlements.py
+New Function: fetch_and_filter_entitlements
+
+Purpose: This function will fetch entitlements from RODAN using the provided resource query and action filter. It will filter out user-based entitlements and deny entitlements.
+Why Needed: To automate the extraction and filtering of entitlements that are relevant for creating policies in PlainID.
+
+def fetch_and_filter_entitlements(resource_query_string, action_filter=None):
+    """
+    Fetch entitlements from RODAN and filter out user-based and deny entitlements.
+    
+    Args:
+    - resource_query_string (str): The resource query string to use for fetching entitlements.
+    - action_filter (str): Optional filter for specific actions.
+    
+    Returns:
+    - list: Filtered entitlements.
+    """
+    try:
+        entitlements_list = get_entitlements(resource_query_string, action_filter)['entitlements']['entitlement']
+        filtered_entitlements = [
+            ent for ent in entitlements_list if "group" in ent and ent.get("deny", "false") == "false"
+        ]
+        return filtered_entitlements
+    except Exception as error:
+        _log.error("Error while fetching entitlements: %s", str(error))
+        return []
+
+# Example usage
+filtered_entitlements = fetch_and_filter_entitlements("resource_query_string_here")
+
+-------
+
+
+2. groups.py
+New Function: create_dynamic_groups_for_entitlements
+
+Purpose: This function will create dynamic groups in PlainID based on the groups listed in the RODAN entitlements.
+Why Needed: To automate the group creation process, ensuring that the appropriate groups exist in PlainID for policy linking.
+
+def create_dynamic_groups_for_entitlements(entitlements):
+    """
+    Create dynamic groups in PlainID based on RODAN entitlements.
+    
+    Args:
+    - entitlements (list): List of entitlements containing group names.
+    
+    Returns:
+    - dict: Mapping of group names to group IDs.
+    """
+    groups_dict = {}
+    for entitlement in entitlements:
+        group_name = entitlement["group"]
+        response = create(group_type="swarm", group_name=group_name, group_description=group_name)
+        if response and "id" in response:
+            groups_dict[group_name] = response["id"]
+        else:
+            _log.error("Failed to create group: %s", group_name)
+    return groups_dict
+
+# Example usage
+group_ids = create_dynamic_groups_for_entitlements(filtered_entitlements)
+
+
+-----
+
+3. policies.py
+New Function: create_policies_for_entitlements
+
+Purpose: This function will create policies in PlainID based on the actions and groups extracted from the entitlements.
+Why Needed: To automate policy creation and ensure policies are correctly set up with the appropriate actions and linked groups.
+
+def create_policies_for_entitlements(application, entitlements, namespace_id):
+    """
+    Create policies in PlainID based on RODAN entitlements.
+    
+    Args:
+    - application (str): The application name for naming policies.
+    - entitlements (list): List of entitlements containing actions and groups.
+    - namespace_id (str): The namespace ID to use for policy creation.
+    
+    Returns:
+    - dict: Mapping of actions to policy IDs.
+    """
+    actions_dict = {}
+    for entitlement in entitlements:
+        action_name = entitlement["action"]
+        policy_name = f"{application}-{action_name}-Access"
+        description = policy_name
+        policy = create_policy(namespace_id, policy_name, description)
+        if policy and "id" in policy:
+            actions_dict[action_name] = policy["id"]
+            _log.info("Policy created: %s", policy_name)
+        else:
+            _log.error("Failed to create policy for action: %s", action_name)
+    return actions_dict
+
+# Example usage
+policy_ids = create_policies_for_entitlements("MyApp", filtered_entitlements, "namespace_id_here")
+
+
+----
+
+
+4. resources.py
+New Function: create_resources_for_entitlements
+
+Purpose: This function will create resources in the PlainID Asset Store based on the RODAN resources.
+Why Needed: To ensure the resources in RODAN are represented in PlainID for consistent access control.
+
+def create_resources_for_entitlements(application_set_id, entitlements):
+    """
+    Create resources in PlainID Asset Store based on RODAN entitlements.
+    
+    Args:
+    - application_set_id (str): The application set ID in PlainID.
+    - entitlements (list): List of entitlements containing resource information.
+    
+    Returns:
+    - list: Resource IDs created.
+    """
+    resource_ids = []
+    for entitlement in entitlements:
+        resource_name = entitlement["resource"]
+        resource = create_resource(application_set_id, resource_name)
+        if resource and "id" in resource:
+            resource_ids.append(resource["id"])
+            _log.info("Resource created: %s", resource_name)
+        else:
+            _log.error("Failed to create resource: %s", resource_name)
+    return resource_ids
+
+# Example usage
+resource_ids = create_resources_for_entitlements("application_set_id_here", filtered_entitlements)
+
+
+----
+
+5. rest_utils.py
+New Function: make_request_with_retry_and_logging
+
+Purpose: Utilize this utility function to make API requests to RODAN and PlainID with retry mechanisms.
+Why Needed: To ensure robustness in network communication and handle transient errors effectively.
+
+def make_request_with_retry_and_logging(request_func, url, max_retries=5, initial_retry_delay=2, max_retry_delay=30, **kwargs):
+    """
+    Make a REST API request with retry logic and logging.
+    
+    Args:
+    - request_func (function): Function to call for making the request.
+    - url (str): The URL to make the request to.
+    - max_retries (int): Maximum number of retry attempts.
+    - initial_retry_delay (int): Initial delay between retries.
+    - max_retry_delay (int): Maximum delay between retries.
+    
+    Returns:
+    - Response: The API response, or None if all retries fail.
+    """
+    retry_delay = initial_retry_delay
+    attempt = 0
+    while attempt < max_retries:
+        try:
+            response = request_func(url, **kwargs)
+            if response and 200 <= response.status_code < 300:
+                return response
+            elif response.status_code >= 500:
+                _log.warning(f"Server error {response.status_code}: {response.reason}. Retrying in {retry_delay} seconds...")
+            else:
+                _log.error(f"Unexpected response: {response.status_code} - {response.reason}")
+                return response
+        except Exception as e:
+            _log.warning(f"Attempt {attempt + 1} for {url} failed: {e}. Retrying in {retry_delay} seconds...")
+        attempt += 1
+        time.sleep(retry_delay)
+        retry_delay = min(max_retry_delay, retry_delay * 2)
+    _log.error(f"Failed to connect to {url} after {max_retries} attempts.")
+    return None
+
+# Example usage
+response = make_request_with_retry_and_logging(requests.get, "http://example.com/api")
+
+
+----
+
+
+Summary of Changes and Purpose
+New functions: These functions are added to handle specific tasks related to fetching, processing, and creating entitlements, groups, policies, and resources.
+Modular approach: By adding new functions rather than modifying existing ones, we maintain backward compatibility with current functionalities.
+Automation and consistency: These functions automate the creation of PlainID entities based on RODAN entitlements, ensuring consistency in access management.
+Error handling and logging: Using rest_utils.py for making API calls ensures robust communication and handles errors gracefully.
