@@ -11,11 +11,14 @@ def create_snow_groups(application):
     dev_snow_groups = set()
     support_snow_groups = set()
 
-    cmdb_url = config.get_arg("cmdb.url") + "/applications/" + application + "/appinstances?type=JSON"
-    r = requests.get(url=cmdb_url, auth=(cmdb_user, cmdb_password))
-    
     try:
-        app_instances = r.json()["result"]
+        cmdb_url = config.get_arg("cmdb.url") + "/applications/" + application + "/appinstances?type=JSON"
+        if not cmdb_url.startswith("http://") and not cmdb_url.startswith("https://"):
+            cmdb_url = "https://" + cmdb_url  # Add schema if missing
+            
+        r = requests.get(url=cmdb_url, auth=(cmdb_user, cmdb_password))
+
+        app_instances = r.json().get("result", [])
         _log.info("CMDB Response for application %s: %s", application, json.dumps(app_instances, indent=4))
         
         for app_instance in app_instances:
@@ -25,11 +28,11 @@ def create_snow_groups(application):
                 _log.info("Skipping instance: Active: %s, Environment: %s", app_instance[CMDB_ACTIVE], app_instance[CMDB_ENVIRONMENT])
                 continue
 
-            if app_instance[CMDB_DEVELOPMENT_GROUP] is not None:
+            if app_instance.get(CMDB_DEVELOPMENT_GROUP):
                 dev_snow_groups.add(app_instance[CMDB_DEVELOPMENT_GROUP])
                 _log.info("Found Development Group: %s", app_instance[CMDB_DEVELOPMENT_GROUP])
                 
-            if app_instance[CMDB_SUPPORT_GROUP] is not None:
+            if app_instance.get(CMDB_SUPPORT_GROUP):
                 support_snow_groups.add(app_instance[CMDB_SUPPORT_GROUP])
                 _log.info("Found Support Group: %s", app_instance[CMDB_SUPPORT_GROUP])
 
@@ -40,15 +43,18 @@ def create_snow_groups(application):
             _log.error("No Snow groups for support found")
             raise MissingSnowGroupsException("No Snow groups for support found")
 
-        # Always return both sets, even if they are empty
+        for group in dev_snow_groups:
+            create(group_type="snow", group_name=group, group_description=group)
+            _log.info("Development Group Created : %s", str(group))
+        for group in support_snow_groups:
+            create(group_type="snow", group_name=group, group_description=group)
+            _log.info("Support Group Created : %s", str(group))
+
         return dev_snow_groups, support_snow_groups
 
     except MissingSnowGroupsException as ex:
         _log.error(f"Error: {str(ex)}")
         return set(), set()  # Returning empty sets to avoid unpacking error
     except Exception as error:
-        if r.status_code == HTTPStatus.NOT_FOUND:
-            _log.error("Incorrect App Name or App not present in CMDB: " + application)
-        else:
-            _log.error("Error processing request for %s: %s", application, str(error))
+        _log.error("Error processing request: %s", str(error))
         return set(), set()  # Always return sets, even in case of error
