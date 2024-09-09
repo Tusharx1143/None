@@ -1,1 +1,792 @@
 
+Key Points Explained:
+Application:
+
+Refers to the main system you're integrating with PlainID and Asset Store. In this case, it seems to be a CMDB (Configuration Management Database) application.
+RODAN:
+
+RODAN structure: You mentioned a structure like root /Toplevel/lowlevel/. This likely represents the hierarchical resource structure in RODAN. Resources like applications, files, or services are categorized in levels, and you want to extract this structure and represent it in the Asset Store.
+Example path: /ppm/PPM/Administrator/Resource. This looks like a specific resource in RODAN that needs to be fetched and represented in the Asset Store.
+CMDB Application and Asset Store:
+
+CMDB application: This refers to the system (likely RODAN) where resources are managed.
+Asset Store: This is where resources are replicated from RODAN into PlainID. Resources in RODAN will need to be mirrored in the PlainID Asset Store for policies to control access to them.
+Instance of Asset Store and PlainID:
+
+You're referring to how the Asset Store and PlainID are integrated and how they handle resources extracted from RODAN. This includes the testing server instance for dissuadable (your environment for testing).
+1 Policy, 3 Resources:
+
+This means one policy in PlainID could be applied to multiple resources. For example, a policy might allow a group of users to access three different resources.
+Separate Policies:
+
+Tom’s Idea: Tom suggests different rules for different policies, meaning that each action (like “read,” “write”) might have its own policy per group.
+Mike’s Idea: Mike suggests one policy per group with a list of resources they can access. This would consolidate all resources that a group can access into one policy instead of having multiple policies.
+Manual Rules:
+
+This refers to the rules that will be manually defined to test how policies control resources. You will want to define these to see how they would look in the actual system (Asset Store + PlainID).
+What Happens in the Code:
+Application Structure in Asset Store:
+
+You need to fetch data from RODAN (for example, /ppm/PPM/Administrator/Resource) and replicate it in the Asset Store as a resource.
+The new code will handle the creation of policies for these resources, depending on whether you go with Tom’s approach (one policy per action) or Mike’s (one policy per group with multiple resources).
+Testing:
+
+The code will extract the hierarchy from RODAN and create policies and resources in the Asset Store.
+Testing involves fetching resources from RODAN and ensuring they are represented correctly in PlainID’s Asset Store.
+
+
+
+
+Balanced Approach: Resource Grouping by Application
+The best approach would be to group resources by application and create policies based on roles or user groups. This way:
+
+Each application will have its own policy.
+You can group resources logically (by application or functionality), making it easier to manage them.
+Each user group or role will be linked to policies that grant access to specific applications or functional resource sets.
+This approach provides:
+
+Simplicity in managing fewer policies.
+Flexibility in linking resources and adding new resources over time.
+Scalability: As you add new resources or applications, you simply add them to the relevant policy.
+Steps to Implement the Balanced Approach
+Extract Resources from RODAN:
+
+Fetch the resources from RODAN (for example, /ppm/PPM/Administrator/Resource).
+Resources might include applications, files, or services. Organize them by application or functionality (e.g., Administrator, Reports, User Management).
+These will form the resource groups in the Asset Store.
+
+
+# Fetch entitlements from RODAN
+entitlements_list = entitlements.get_entitlements(resource, action_filter)['entitlements']['entitlement']
+------------
+
+Create Resource Types and Resources:
+
+Create resource types and resources in the PlainID Asset Store based on the RODAN applications or functional groups.
+Each resource in RODAN (like /ppm/PPM/Administrator/Resource) will correspond to a resource in the Asset Store.
+Group resources by application: For instance, all resources under Administrator will be grouped together under a common resource type.
+
+
+resource_type_response = create_resource_type("Administrator", application_sys_id)
+resource_type_id = resource_type_response['resource_type_application_set_key']
+resource_response = create_resource(application_sys_id, resource_type_id, resource)
+resource_id = resource_response['resource_map_key']
+
+
+--------
+
+Create Policies Based on User Roles or Groups:
+
+Instead of creating multiple policies for different actions or resources, create one policy per user role or group.
+For example, you could have policies like:
+Administrator-Access: Grants access to all administrative resources.
+User-Access: Grants access to user-facing resources.
+This simplifies policy management while ensuring that the correct user groups get access to the right applications or resource sets.
+
+# Create one policy per user role or group
+policy_name = f"{application}-Admin-Access"
+policy = create_policy(namespace_id, policy_name, description)
+
+-----
+
+Link Resources to Policies:
+
+Use the new function link_resources_to_policy to link the grouped resources (from Step 2) to the policies created based on user roles (from Step 3).
+This will allow you to control access to entire sets of resources (grouped by application) via a single policy.
+
+# Link grouped resources to the policies
+link_resources_to_policy(policy['id'], [resource_id])
+
+------------
+
+Dynamic Group or Role Mapping (Optional):
+
+Map RODAN groups or users to the policies. You can either implement this immediately or later.
+For example, the Administrator group will be linked to the Administrator-Access policy, giving them access to the relevant resources.
+Testing:
+
+You need to test how the resources are extracted from RODAN and represented in the Asset Store.
+Verify that the policies are linked to the right resources and that users/groups are correctly mapped to these policies.
+Make sure the resources are accessible based on the entitlements in RODAN.
+What to Change in the Code
+Group Resources by Application/Functionality:
+
+In the create_policies_based_on_resource function, update how resources are grouped by application or functionality (like Administrator, User Management, etc.).
+This will ensure all related resources are tied together under a single policy.\
+
+
+resource_type_response = create_resource_type("Administrator", application_sys_id)
+resource_response = create_resource(application_sys_id, resource_type_id, resource)
+
+
+Simplify Policy Creation:
+
+Instead of creating one policy per action or per group (Tom's or Mike's approach), create one policy per role/user group that applies to all resources grouped by application or functionality.
+This reduces the complexity of managing multiple policies.
+
+policy_name = f"{application}-Admin-Access"  # One policy for all Administrator-related resources
+policy = create_policy(namespace_id, policy_name, description)
+
+
+Link Resources to Policies:
+
+Use link_resources_to_policy to link grouped resources to the policies created for user roles.
+
+link_resources_to_policy(policy['id'], [resource_id])  # Link resources to the Administrator-Access policy
+
+--
+
+
+
+What You Will Need to Do:
+Update the code to create resource types and resources by application or functionality group.
+Create policies based on user roles or groups (instead of one per action or group).
+Test the integration between RODAN and the Asset Store to verify that the resources are correctly fetched and represented.
+Ensure policy enforcement by linking resources to the right policies and testing access control based on user roles/groups.
+
+------------
+
+Step 1: Fetch Resources from RODAN
+RODAN likely exposes resources via an API or another query mechanism. You’ll use this API to retrieve the resources
+
+def fetch_rodan_resources(resource_path, action_filter=None):
+    """
+    Fetch resources from RODAN based on the given resource path and action filter.
+    
+    Args:
+    - resource_path (str): Path of the resource in RODAN (e.g., /ppm/PPM/Administrator/Resource)
+    - action_filter (str, optional): Filter to restrict specific actions (e.g., read, write)
+
+    Returns:
+    - list: List of resources extracted from RODAN.
+    """
+    # Assuming there is a RODAN API you can query to fetch resources
+    api_url = f"https://rodan.example.com/resources?path={resource_path}"
+    if action_filter:
+        api_url += f"&action={action_filter}"
+
+    # Fetch resources from RODAN
+    response = requests.get(api_url, headers={"Authorization": "Bearer your_rodan_token"})
+
+    if response.status_code == 200:
+        return response.json().get("resources", [])
+    else:
+        raise Exception(f"Failed to fetch resources from RODAN: {response.text}")
+
+
+-------------------------------------
+
+Detailed
+
+
+To implement the Balanced Approach that groups resources by application and creates policies based on user roles or groups, you will need to modify existing files and potentially add new functions to handle the following tasks:
+
+Fetching RODAN resources.
+Creating resource types and resources in the Asset Store.
+Creating policies based on user roles or groups.
+Linking the resources to the policies.
+Testing and verifying that the RODAN resources are correctly fetched and represented in the Asset Store.
+
+
+1. Files to Modify
+policies.py: This file will handle the policy creation and linking to resources.
+resources.py: This file will handle the creation of resource types and resources in the Asset Store.
+entitlements.py: This file should already contain the code to fetch entitlements from RODAN. You can leave it as is unless you want to make changes for custom filtering.
+
+
+2. Fetching RODAN Resources
+You will fetch RODAN resources using the entitlements.py file. The code to fetch entitlements from RODAN should already be in place, but you may need to verify that it’s fetching the correct resources and filtering them as necessary.
+
+Fetching RODAN Entitlements (already in entitlements.py):
+def get_entitlements(resource, action_filter):
+    """
+    Fetch entitlements from RODAN for the given resource and action filter.
+    """
+    # Example implementation for fetching RODAN resources
+    response = requests.get(f"{rodan_api_url}/entitlements?resource={resource}&action_filter={action_filter}")
+    return response.json()  # Assuming this returns the entitlements as JSON
+
+In this case, the resource can be something like /ppm/PPM/Administrator/Resource in RODAN, and the action_filter could specify actions like "read", "write", etc.
+
+
+
+
+3. Creating Resource Types and Resources in Asset Store
+This code will reside in resources.py and is responsible for:
+
+Creating resource types (like Administrator, User Management, etc.).
+Creating resources based on RODAN resource data.
+Code to Modify in resources.py:
+def create_resource_type(resource_name, application_set_id):
+    """
+    Create a resource type in the PlainID Asset Store.
+    
+    Args:
+    - resource_name (str): Name of the resource type (e.g., Administrator, Reports).
+    - application_set_id (str): The ID of the application set.
+    
+    Returns:
+    - dict: The response from the Asset Store API.
+    """
+    data = {"resource_name": resource_name}
+    url = f"{api_url}/{application_set_id}/resources-type"
+    response = requests.post(url, data=json.dumps(data), headers=headers, auth=(asset_store_user, asset_store_password))
+    return response.json()
+
+
+def create_resource(application_set_id, resource_type_id, resource_name):
+    """
+    Create a resource in the PlainID Asset Store under a given resource type.
+    
+    Args:
+    - application_set_id (str): The ID of the application set.
+    - resource_type_id (str): The ID of the resource type.
+    - resource_name (str): The name of the resource (e.g., /ppm/PPM/Administrator/Resource).
+    
+    Returns:
+    - dict: The response from the Asset Store API.
+    """
+    data = {"resource_name": resource_name}
+    url = f"{api_url}/{application_set_id}/resources-type/{resource_type_id}/resources"
+    response = requests.post(url, data=json.dumps(data), headers=headers, auth=(asset_store_user, asset_store_password))
+    return response.json()
+
+
+create_resource_type will create resource types like "Administrator" or "Reports".
+create_resource will create individual resources (such as /ppm/PPM/Administrator/Resource).
+
+Example Code to Fetch and Create Resources:
+resource_type_response = create_resource_type("Administrator", application_set_id)
+resource_type_id = resource_type_response['resource_type_application_set_key']
+resource_response = create_resource(application_set_id, resource_type_id, "/ppm/PPM/Administrator/Resource")
+
+
+4. Creating Policies Based on User Roles/Groups
+You’ll modify the policies.py file to create one policy per user role or group. For example:
+
+Administrator-Access: Grants access to administrative resources.
+User-Access: Grants access to user-facing resources.
+Code to Modify in policies.py:
+def create_policies_based_on_roles(application, resource):
+    """
+    Create policies based on user roles (Administrator, User, etc.) and link resources to policies.
+    
+    Args:
+    - application (str): The name of the application (e.g., RODAN).
+    - resource (str): The resource being linked to policies.
+    """
+    # Example: Create an Administrator policy
+    policy_name = f"{application}-Admin-Access"
+    policy = create_policy(namespace_id, policy_name, description="Administrator access policy")
+
+    # Fetch the resource type and resource
+    resource_type_response = create_resource_type("Administrator", application_sys_id)
+    resource_type_id = resource_type_response['resource_type_application_set_key']
+    resource_response = create_resource(application_sys_id, resource_type_id, resource)
+    resource_id = resource_response['resource_map_key']
+
+    # Link the resource to the policy
+    link_resources_to_policy(policy['id'], [resource_id])
+
+    _log.info(f"Policy {policy_name} created and resource {resource} linked successfully.")
+
+This function creates a single policy for an Administrator role and links the resource.
+You can create similar policies for other roles like User-Access or Report-Access.
+
+
+
+
+5. Linking Resources to Policies
+The new function link_resources_to_policy is already present in your modified code. It will link the resources you created in the Asset Store to the policies. 
+This ensures that access control is applied to real-world resources based on user roles.
+
+def link_resources_to_policy(policy_id, resource_ids):
+    """
+    Link resources to a given policy in PlainID.
+    
+    Args:
+    - policy_id (str): The ID of the policy.
+    - resource_ids (list): List of resource IDs to link to the policy.
+    """
+    data = {"resources": resource_ids}
+    url = f"{api_url}/{policy_id}/resources"
+    response = requests.post(url, data=json.dumps(data), headers=headers, auth=(plainid_user, plainid_password))
+    return response.json()
+
+
+
+----
+
+
+
+How the RODAN Resource Will Get Fetched and Seen in Asset Store
+Fetching: The resources are fetched from RODAN via the entitlements.py file. The get_entitlements function will retrieve the resource paths and actions.
+
+Creating Resource Types: In the resources.py file, the create_resource_type function creates resource types in the PlainID Asset Store. For example, the "Administrator" resource type might represent all admin-related resources in RODAN.
+
+Creating Resources: The create_resource function will create the individual resources (e.g., /ppm/PPM/Administrator/Resource) in the Asset Store.
+
+Linking to Policies: The policies will be linked to these resources using the link_resources_to_policy function, ensuring that the access control defined in PlainID applies to the actual resources fetched from RODAN.
+
+FLOW CODE:
+
+# Fetch RODAN entitlements (resource paths)
+entitlements_list = entitlements.get_entitlements("/ppm/PPM/Administrator/Resource", "read")
+
+# Create a resource type in the Asset Store
+resource_type_response = create_resource_type("Administrator", application_set_id)
+resource_type_id = resource_type_response['resource_type_application_set_key']
+
+# Create the resource in the Asset Store
+resource_response = create_resource(application_set_id, resource_type_id, "/ppm/PPM/Administrator/Resource")
+
+# Create a policy for an Administrator role
+policy_name = f"RODAN-Admin-Access"
+policy = create_policy(namespace_id, policy_name, "Administrator access policy")
+
+# Link the created resource to the policy
+link_resources_to_policy(policy['id'], [resource_response['resource_map_key']])
+
+
+
+
+
+
+Summary of Changes and Steps to Implement:
+Modify entitlements.py (if needed) to ensure RODAN resources are fetched correctly.
+Modify resources.py to create resource types and resources in the Asset Store based on RODAN data.
+Modify policies.py to create policies for user roles (like Administrator, User) and link resources to those policies.
+Test the integration by fetching resources from RODAN and verifying that they are correctly represented in the PlainID Asset Store.
+Optional: Add dynamic group or user role mapping if needed.
+
+-----------------------
+
+
+
+Minimumm Changess:
+
+Key Objective:
+Fetch resources from RODAN.
+Group these resources by application or functionality (such as Administrator, User Management).
+Create policies based on user roles or groups and link the resources to these policies.
+Minimal changes to existing production code while implementing this.
+Step-by-Step Overview: What Needs to Be Done
+Fetching RODAN Resources:
+
+You will fetch resources from RODAN (e.g., /ppm/PPM/Administrator/Resource) and group them based on application or functionality.
+This happens in the entitlements.py (or wherever your current entitlements are fetched).
+Resource Type and Resource Creation in Asset Store:
+
+Create resource types and resources in the Asset Store for each group of RODAN resources.
+This will happen in resources.py (minimal changes, as you already have create_resource_type and create_resource functions).
+Policy Creation for User Roles:
+
+Instead of creating a policy per action (Tom’s approach) or per group with multiple resources (Mike’s approach), create one policy per user role (e.g., Admin-Access, User-Access) and link the grouped resources.
+This happens in policies.py.
+Linking Resources to Policies:
+
+Use the existing link_resources_to_policy function (added previously) to link the created resources to the policies.
+This also happens in policies.py.
+File-by-File Breakdown of Changes:
+1. entitlements.py (Fetching RODAN Resources)
+You’ll need to ensure that RODAN resources are fetched properly and organized in a way that can be processed for policy creation.
+
+Key Function: You likely already have a function that fetches entitlements from RODAN, like get_entitlements.
+Modify it to fetch and group resources by application or functionality (e.g., Administrator, User Management).
+Minimal Changes: You won’t need to modify much, just ensure the entitlements are fetched and categorized correctly.
+
+Code:
+
+# Example: Fetch entitlements from RODAN, grouped by application or functionality
+def get_entitlements(resource, action_filter):
+    """
+    Fetch entitlements from RODAN, grouped by application or functionality.
+    """
+    entitlements_response = requests.get(f"RODAN_API/{resource}?filter={action_filter}")
+    
+    entitlements = entitlements_response.json()['entitlements']
+    
+    # Group resources by application or functionality
+    grouped_entitlements = {
+        'Administrator': [e for e in entitlements if 'Admin' in e['role']],
+        'User Management': [e for e in entitlements if 'User' in e['role']]
+    }
+    
+    return grouped_entitlements
+2. resources.py (Creating Resource Types and Resources in Asset Store)
+Minimal changes are needed here since you already have the create_resource_type and create_resource functions. You will just need to ensure they are called when processing the grouped RODAN resources.
+
+Key Function: create_resource_type and create_resource.
+
+What to Add: Call these functions with the right resource groups (based on your RODAN structure).
+Code (No Major Changes, Just Add Grouping Logic):
+
+# Create resource types and resources based on the grouped RODAN resources
+def process_rodan_resources(grouped_resources):
+    """
+    Create resource types and resources in the Asset Store for each group.
+    """
+    for group_name, resources in grouped_resources.items():
+        resource_type_response = create_resource_type(group_name, application_sys_id)
+        resource_type_id = resource_type_response['resource_type_application_set_key']
+        
+        for resource in resources:
+            # Create each resource in the asset store
+            resource_response = create_resource(application_sys_id, resource_type_id, resource)
+            resource_id = resource_response['resource_map_key']
+            
+            # Store the resource_id for linking with policies later
+            yield group_name, resource_id
+3. policies.py (Policy Creation and Linking Resources)
+This is where you will need to make the most changes. You will create one policy per user role or group and link grouped resources to that policy.
+
+Key Function: create_policies_based_on_resource.
+Minimal Change Approach: Instead of creating separate policies per action or group, create one policy per user role and link the grouped resources (like Administrator, User Management).
+Code Changes:
+
+def create_policies_based_on_resource(application, grouped_resources, namespace_id):
+    """
+    Create policies based on user roles or groups, and link grouped resources to these policies.
+    """
+    # Example: Create one policy for 'Administrator' and one for 'User Management'
+    policies = {}
+    
+    for group_name in grouped_resources.keys():
+        # Create one policy per group (e.g., Admin, User Management)
+        policy_name = f"{application}-{group_name}-Access"
+        policy = create_policy(namespace_id, policy_name, f"Access policy for {group_name}")
+        policies[group_name] = policy['id']
+        
+    return policies
+Linking Resources to Policies (in policies.py)
+Once the policies are created, use the link_resources_to_policy function to link the grouped resources to their respective policies.
+
+Code:
+
+# Link the grouped resources to their respective policies
+def link_grouped_resources_to_policies(grouped_resources, policies):
+    """
+    Link grouped resources to their respective policies.
+    """
+    for group_name, resource_ids in grouped_resources.items():
+        policy_id = policies[group_name]
+        
+        # Link all the resources in this group to the policy
+        link_resources_to_policy(policy_id, resource_ids)
+Step-by-Step Workflow
+Step 1: Fetch grouped RODAN resources by application or functionality (e.g., Administrator, User Management) using get_entitlements in entitlements.py.
+
+Step 2: Process the fetched RODAN resources by creating resource types and resources in the Asset Store using process_rodan_resources in resources.py.
+
+Step 3: Create one policy per user role or group using create_policies_based_on_resource in policies.py.
+
+Step 4: Link the grouped resources to the created policies using link_grouped_resources_to_policies in policies.py.
+
+How the RODAN Resources Will Be Seen in the Asset Store:
+Each resource fetched from RODAN will be represented as a resource in the Asset Store.
+These resources will be grouped by application or functionality (e.g., Administrator, User Management) and linked to policies in PlainID.
+When you view the Asset Store, you will see resources organized by these groups and linked to the respective policies.
+Changes Summary:
+entitlements.py: Fetch RODAN resources and group them by application or functionality (minimal changes).
+resources.py: Create resource types and resources in the Asset Store for each group (use existing functions with grouping logic).
+policies.py: Create policies based on user roles or groups (like Administrator-Access) and link the grouped resources to these policies.
+Linking Resources: Use the link_resources_to_policy function to link the grouped resources to the created policies.
+
+
+-----------
+
+
+1. resources.py: Handle Resource Creation in the Asset Store
+This file will manage the creation of resource types and resources in the PlainID Asset Store. We will reuse the existing functions for creating resource types and resources and slightly enhance them to handle the new functionality of grouping resources.
+
+Changes:
+Add Resource Grouping Logic:
+Group resources by application or functionality in the PlainID Asset Store.
+Modified Code for resources.py:
+
+# Existing imports
+import logging
+import requests
+import json
+from http import HTTPStatus
+
+headers = config.get_headers()
+__log = logging.getLogger("rest_utils")
+
+def create_resource_type(resource_name, application_set_id, resource_attributes=[]):
+    """
+    Create a resource type in the PlainID Asset Store.
+    
+    Args:
+    - resource_name (str): The name of the resource type (e.g., 'Administrator' or 'Reports').
+    - application_set_id (str): The ID of the application set in which to create the resource type.
+    - resource_attributes (list): Additional attributes for the resource type (optional).
+    
+    Returns:
+    - dict: The response from the Asset Store API.
+    """
+    if not resource_name:
+        raise Exception("Resource Name Not Found!")
+    
+    data = {
+        "resource_name": resource_name,
+        "resource_attributes": resource_attributes
+    }
+
+    try:
+        url = f"{api_url}/{application_set_id}/resources-type"
+        r = requests.post(url=url, data=json.dumps(data), headers=headers, auth=(asset_store_user, asset_store_password))
+        response = r.json()
+        if r.status_code == HTTPStatus.OK:
+            __log.info(f"Resource type {resource_name} created successfully")
+            return response
+        else:
+            raise Exception(f"Error creating resource type: {r.status_code}, {r.text}")
+    except Exception as error:
+        __log.error(f"Error while creating resource type: {str(error)}")
+        raise error
+
+def create_resource(application_set_id, resource_type_id, resource_name):
+    """
+    Create a resource in the PlainID Asset Store under the given resource type.
+    
+    Args:
+    - application_set_id (str): The ID of the application set.
+    - resource_type_id (str): The ID of the resource type.
+    - resource_name (str): The name of the resource to create (e.g., '/ppm/PPM/Administrator/Resource').
+    
+    Returns:
+    - dict: The response from the Asset Store API.
+    """
+    data = {
+        "resource_name": resource_name
+    }
+
+    try:
+        url = f"{api_url}/{application_set_id}/resources-type/{resource_type_id}/resources"
+        r = requests.post(url=url, data=json.dumps(data), headers=headers, auth=(asset_store_user, asset_store_password))
+        response = r.json()
+        if r.status_code == HTTPStatus.OK:
+            __log.info(f"Resource {resource_name} created successfully")
+            return response
+        else:
+            raise Exception(f"Error creating resource: {r.status_code}, {r.text}")
+    except Exception as error:
+        __log.error(f"Error while creating resource: {str(error)}")
+        raise error
+
+Why These Changes?:
+This ensures that the resources fetched from RODAN are grouped by application or functionality and created in the PlainID Asset Store.
+Minimal changes: We are simply enhancing the existing functions to handle grouping.
+
+
+
+2. policies.py: Link Resources to Policies
+This file already handles policy creation. The main changes here are:
+
+Ensure resources are linked to policies after being created in the Asset Store.
+Create policies based on user roles or groups that govern access to entire resource sets.
+Modified Code for policies.py:
+
+# Existing imports
+import json
+import logging
+import requests
+from http import HTTPStatus
+import config
+import namespace
+import cmdb_application
+import entitlements
+from resources import create_resource_type, create_resource
+
+# Link resources to policies
+def link_resources_to_policy(policy_id, resource_ids):
+    """
+    Link resources to a given policy in PlainID.
+    
+    Args:
+    - policy_id (str): The ID of the policy.
+    - resource_ids (list): List of resource IDs to link to the policy.
+    
+    Returns:
+    - None
+    """
+    data = {
+        "resources": resource_ids
+    }
+
+    try:
+        url = f"{api_url}/{policy_id}/resources"
+        response = requests.post(url=url, data=json.dumps(data), headers=headers, auth=(plainid_user, plainid_password))
+        if response.status_code == HTTPStatus.OK:
+            _log.info("Resources linked to policy successfully")
+        else:
+            _log.debug(f"Unexpected response code from REST call: {response.status_code}")
+            raise Exception(response.text)
+    except Exception as error:
+        _log.error(f"Error linking resources to policy: {str(error)}")
+        raise error
+
+# Enhanced create_policies_based_on_resource function
+def create_policies_based_on_resource(application, resource, action_filter):
+    """
+    Create policies based on a given resource and action filter.
+    
+    Args:
+    - application (str): The name of the application.
+    - resource (str): The resource for which to create policies.
+    - action_filter (str): Filter for specific actions.
+    
+    Returns:
+    - bool: True if policies are created successfully.
+    """
+    cmdb_app = cmdb_application.get_cmdb_application(application)
+    if not cmdb_app:
+        raise Exception(f"Application {application} not found in CMDB!")
+    
+    application_sys_id = cmdb_app['sys_id']
+    ns = namespace.get_namespace_or_throw(application)
+    if ns is not None:
+        namespace_id = ns['id']
+
+    # Fetch entitlements from RODAN
+    entitlements_list = entitlements.get_entitlements(resource, action_filter)['entitlements']['entitlement']
+
+    rodan_actions = set()
+    rodan_groups = set()
+
+    for entitlement in entitlements_list:
+        if "group" in entitlement and entitlement["deny"] == "false":
+            rodan_actions.add(entitlement["action"])
+            rodan_groups.add(entitlement["group"])
+
+    actions_dict = {}
+    try:
+        for action_name in sorted(rodan_actions):
+            policy_name = f"{application}-{action_name}-Access"
+            description = policy_name
+            policy = create_policy(namespace_id, policy_name, description)
+            actions_dict.update({action_name: policy['id']})
+
+            # Create resource type and resource in Asset Store
+            resource_type_response = create_resource_type(application, application_sys_id)
+            resource_type_id = resource_type_response['resource_type_application_set_key']
+            resource_response = create_resource(application_sys_id, resource_type_id, resource)
+            resource_id = resource_response['resource_map_key']
+
+            # Link the created resources to the policies
+            link_resources_to_policy(policy['id'], [resource_id])
+
+            _log.info(f"Policy {policy_name} created and resource {resource} linked successfully.")
+    except Exception as error:
+        raise Exception(f"Error while creating policy and linking resources: {str(error)}")
+
+
+Why These Changes?:
+These changes link the created resources to the relevant policies, ensuring that the policies control access to actual resources.
+Minimal changes: We're simply adding the linking logic to connect resources to policies.
+
+
+
+
+
+3. Fetching RODAN Resources and Presenting in Asset Store
+The RODAN resources will be fetched via the entitlements.get_entitlements() function, which queries RODAN for entitlements based on the resource and action filter.
+These resources will be grouped and created in the PlainID Asset Store using the create_resource_type and create_resource functions.
+Finally, the resources will be linked to policies that govern access to them.
+
+
+Add Logging to Track Resource Fetching in policies.py:
+Add logging to capture when a resource is fetched from RODAN and when it is created in the Asset Store.
+def create_policies_based_on_resource(application, resource, action_filter):
+    """
+    Create policies based on a given resource and action filter.
+    
+    Args:
+    - application (str): The name of the application.
+    - resource (str): The resource for which to create policies.
+    - action_filter (str): Filter for specific actions.
+    
+    Returns:
+    - bool: True if policies are created successfully.
+    """
+    cmdb_app = cmdb_application.get_cmdb_application(application)
+    if not cmdb_app:
+        raise Exception(f"Application {application} not found in CMDB!")
+    
+    application_sys_id = cmdb_app['sys_id']
+    ns = namespace.get_namespace_or_throw(application)
+    if ns is not None:
+        namespace_id = ns['id']
+
+    # Fetch entitlements from RODAN
+    _log.info(f"Fetching entitlements for resource: {resource}")
+    entitlements_list = entitlements.get_entitlements(resource, action_filter)['entitlements']['entitlement']
+    
+    if not entitlements_list:
+        raise Exception(f"No entitlements found for resource: {resource}")
+
+    _log.info(f"Entitlements fetched for resource: {resource} - {entitlements_list}")
+
+    rodan_actions = set()
+    rodan_groups = set()
+
+    for entitlement in entitlements_list:
+        if "group" in entitlement and entitlement["deny"] == "false":
+            rodan_actions.add(entitlement["action"])
+            rodan_groups.add(entitlement["group"])
+
+    if len(rodan_actions) == 0:
+        raise Exception(f"No actions found for resource: {resource}")
+
+    actions_dict = {}
+    try:
+        for action_name in sorted(rodan_actions):
+            policy_name = f"{application}-{action_name}-Access"
+            description = policy_name
+            policy = create_policy(namespace_id, policy_name, description)
+            actions_dict.update({action_name: policy['id']})
+
+            # Create resource type and resource in Asset Store
+            _log.info(f"Creating resource type for application: {application}")
+            resource_type_response = create_resource_type(application, application_sys_id)
+            resource_type_id = resource_type_response['resource_type_application_set_key']
+
+            _log.info(f"Creating resource {resource} in Asset Store")
+            resource_response = create_resource(application_sys_id, resource_type_id, resource)
+            resource_id = resource_response['resource_map_key']
+
+            _log.info(f"Linking resource {resource} to policy {policy_name}")
+            link_resources_to_policy(policy['id'], [resource_id])
+
+            _log.info(f"Policy {policy_name} created and resource {resource} linked successfully.")
+    except Exception as error:
+        raise Exception(f"Error while creating policy and linking resources: {str(error)}")
+
+
+
+What This Does:
+Logging Entitlements: This logs when entitlements are fetched for a specific resource (e.g., /ppm/PPM/Administrator/Resource).
+Logging Resource Creation: Logs when a resource type and resource are created in the Asset Store.
+Logging Resource Linking: Logs when the created resource is linked to a policy, ensuring that access control is applied.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
