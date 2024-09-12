@@ -1,1 +1,64 @@
+import json
+import logging
+import requests
+from http import HTTPStatus
+
+_log = logging.getLogger('config')
+
+base_url = config.get_arg("plainid.url")
+api_url = base_url + "/rest/permission"
+plainid_user = config.get_arg("plainid.user")
+plainid_password = config.get_arg("plainid.password")
+
+def link_resources_to_policy(policy_id, resource_ids):
+    """
+    Link resources to a policy in PlainID.
+    """
+    data = {
+        "resources": resource_ids
+    }
+
+    try:
+        url = f"{api_url}/{policy_id}/resources"
+        response = requests.post(url=url, data=json.dumps(data), headers=headers, auth=(plainid_user, plainid_password))
+        if response.status_code == HTTPStatus.OK:
+            _log.info("Resources linked to policy successfully")
+        else:
+            _log.debug(f"Error linking resources: {response.status_code}")
+            raise Exception(response.text)
+    except Exception as error:
+        _log.error(f"Error linking resources to policy: {str(error)}")
+        raise error
+
+# New function to create policies for the specific resource and link them
+def create_policies_based_on_specific_resource(application, action_filter=None):
+    """
+    Create policies for the specific resource `/ppm/PPM/Administrator/Resource`.
+    """
+    resource = "/ppm/PPM/Administrator/Resource"
+    
+    # Fetch entitlements for the specific resource
+    entitlements_list = get_specific_entitlements()
+
+    if entitlements_list:
+        rodan_actions = set()
+        rodan_groups = set()
+
+        for entitlement in entitlements_list:
+            if "group" in entitlement and entitlement["deny"] == "false":
+                rodan_actions.add(entitlement["action"])
+                rodan_groups.add(entitlement["group"])
+
+        for action_name in rodan_actions:
+            policy_name = f"{application}-{action_name}-Access"
+            description = f"Policy for {action_name} access to {resource}"
+            policy = create_policy(namespace_id, policy_name, description)
+            
+            # Link resource to policy
+            resource_id = get_resource_id_by_name(resource)
+            link_resources_to_policy(policy['id'], [resource_id])
+        
+        _log.info("Policies created for specific resource.")
+    else:
+        _log.error("No entitlements found for the specific resource.")
 
