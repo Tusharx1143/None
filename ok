@@ -1,1 +1,242 @@
+Plan:
+Fetch CMDB Application:
+
+Users select an application from CMDB (use the get_all_cmdb_applications() function to present available apps).
+The system will fetch the CMDB Application details, specifically the cmdb_applicationId.
+Create Application Set in Asset Store:
+
+Once the application is selected, you will create a new application set in the Asset Store using the selected CMDB application ID.
+Fetch Resources from RODAN via CMDB Application:
+
+Based on the selected application, fetch resources from RODAN.
+Create Resources and Actions in the Asset Store:
+
+Using the fetched RODAN resources, create corresponding resources and actions in the Asset Store.
+
+
+
+
+1. Fetching CMDB Application and Resources:
+In cmdb_application.py, you already have the get_cmdb_application() function to fetch a specific application from CMDB. You can use it to retrieve the application details and get the cmdb_applicationId.
+
+# cmdb_application.py
+def get_cmdb_application_details(application_name):
+    """
+    Fetch the CMDB application details including application ID and name.
+    
+    Args:
+    - application_name (str): The name of the application in CMDB.
+    
+    Returns:
+    - dict: CMDB application details including name and sys_id (application ID).
+    """
+    try:
+        cmdb_app = get_cmdb_application(application_name)
+        if not cmdb_app:
+            raise Exception(f"Application {application_name} not found in CMDB.")
+        return cmdb_app
+    except Exception as error:
+        _log.error(f"Error fetching CMDB Application {application_name}: {str(error)}")
+        return None
+
+Explanation: This method fetches the CMDB application and retrieves the sys_id (the CMDB application ID)
+---
+
+2. Creating the Application Set in Asset Store:
+In policies.py, you'll create a new application set in the Asset Store using the fetched CMDB application ID.
+
+# policies.py
+def create_application_set_in_asset_store(application_name, cmdb_application_id):
+    """
+    Create a new application set in the Asset Store using the CMDB application ID.
+    
+    Args:
+    - application_name (str): The name of the application.
+    - cmdb_application_id (str): The ID of the CMDB application.
+    
+    Returns:
+    - dict: The response from the Asset Store API (application set details).
+    """
+    application_set_data = {
+        "application_cmdb_sys_id": cmdb_application_id,
+        "application_set_name": f"{application_name} Application Set",
+        "application_set_description": f"Asset Store migration for {application_name}"
+    }
+    
+    try:
+        url = f"{api_url}/applicationsets"
+        response = requests.post(url, headers=headers, data=json.dumps(application_set_data))
+        if response.status_code == HTTPStatus.OK:
+            _log.info(f"Successfully created application set for {application_name}")
+            return response.json()
+        else:
+            _log.error(f"Failed to create application set for {application_name}. Status: {response.status_code}")
+            return {}
+    except Exception as error:
+        _log.error(f"Error creating application set for {application_name}: {str(error)}")
+        return {}
+
+Explanation: This function uses the POST /asset/api/v1/applicationsets API to create an application set in the Asset Store using the cmdb_applicationId.
+
+
+---
+
+3. Fetching RODAN Resources from CMDB Application:
+We will modify the get_cmdb_application and add the logic to fetch RODAN resources based on the application you fetch.
+
+# cmdb_application.py
+def fetch_rodan_resources_from_cmdb(cmdb_application_id):
+    """
+    Fetch RODAN resources based on the CMDB application ID.
+    
+    Args:
+    - cmdb_application_id (str): The CMDB application ID.
+    
+    Returns:
+    - list: A list of RODAN resources tied to the CMDB application.
+    """
+    try:
+        # Simulating RODAN API Call to fetch resources for a given CMDB application ID
+        rodan_url = f"https://rodan.api/v1/resources?applicationId={cmdb_application_id}"
+        response = requests.get(rodan_url)
+        if response.status_code == HTTPStatus.OK:
+            return response.json()["resources"]
+        else:
+            _log.error(f"Failed to fetch RODAN resources for application ID {cmdb_application_id}. Status: {response.status_code}")
+            return []
+    except Exception as error:
+        _log.error(f"Error fetching RODAN resources for application ID {cmdb_application_id}: {str(error)}")
+        return []
+
+
+Explanation: This function calls a simulated RODAN API to fetch resources based on the CMDB Application ID. These resources will later be mapped into the Asset Store.
+
+
+---
+
+ Mapping Resources to Asset Store:
+Next, using the resources fetched from RODAN, you’ll map them into the Asset Store using resources.py (already partially implemented).
+
+
+# resources.py
+def create_rodan_resources_in_asset_store(application_set_id, rodan_resources):
+    """
+    Create RODAN resources in the Asset Store under a specific application set.
+    
+    Args:
+    - application_set_id (str): The ID of the application set in Asset Store.
+    - rodan_resources (list): A list of resources fetched from RODAN.
+    
+    Returns:
+    - dict: A mapping of RODAN resource names to Asset Store resource IDs.
+    """
+    resource_mapping = {}
+    for resource in rodan_resources:
+        try:
+            # Creating resource in the Asset Store
+            resource_response = create_resource(application_set_id, None, resource["resource_name"])
+            if "resource_map_key" in resource_response:
+                resource_mapping[resource["resource_name"]] = resource_response["resource_map_key"]
+                _log.info(f"Resource {resource['resource_name']} created successfully in Asset Store")
+            else:
+                _log.error(f"Failed to create resource {resource['resource_name']} in Asset Store")
+        except Exception as error:
+            _log.error(f"Error creating resource {resource['resource_name']}: {str(error)}")
+    return resource_mapping
+
+Explanation: This function creates each RODAN resource in the Asset Store and returns a mapping of resource names to their corresponding Asset Store resource IDs.
+
+
+---
+Final Workflow Integration:
+Fetch CMDB Application:
+
+Use get_all_cmdb_applications() to allow the user to select an application.
+Call get_cmdb_application_details() to fetch the application’s details.
+Create Application Set in Asset Store:
+
+Call create_application_set_in_asset_store() with the application name and CMDB application ID to create the set.
+Fetch RODAN Resources:
+
+Call fetch_rodan_resources_from_cmdb() to get the resources tied to the CMDB application ID.
+Map Resources to Asset Store:
+
+Call create_rodan_resources_in_asset_store() to create the resources in the Asset Store.
+Verify:
+
+You can use the GET /asset/api/v1/resources API to verify that the resources were successfully created.
+
+if __name__ == "__main__":
+    # Example Application Name to fetch from CMDB
+    application_name = "Test Set for PPM"
+    
+    # Step 1: Fetch CMDB Application Details
+    cmdb_app_details = get_cmdb_application_details(application_name)
+    
+    if cmdb_app_details:
+        # Step 2: Create Application Set in Asset Store
+        application_set_response = create_application_set_in_asset_store(application_name, cmdb_app_details["sys_id"])
+        
+        if "application_set_id" in application_set_response:
+            application_set_id = application_set_response["application_set_id"]
+            
+            # Step 3: Fetch RODAN Resources tied to CMDB Application
+            rodan_resources = fetch_rodan_resources_from_cmdb(cmdb_app_details["sys_id"])
+            
+            if rodan_resources:
+                # Step 4: Map RODAN Resources into Asset Store
+                create_rodan_resources_in_asset_store(application_set_id, rodan_resources)
+            else:
+                _log.error("No RODAN resources found to migrate")
+        else:
+            _log.error("Failed to create Application Set in Asset Store")
+    else:
+        _log.error(f"CMDB Application {application_name} not found.")
+----
+
+Task Overview:
+The goal is to fetch resources from a selected CMDB application (which represents the RODAN resources) and migrate those resources into the PlainID Asset Store by creating an Application Set and the associated resources in the Asset Store.
+
+Solution Breakdown:
+Fetching CMDB Applications:
+
+We start by fetching a list of CMDB applications (via the get_all_cmdb_applications() function), which the user can choose from.
+The user selects a specific application to migrate (e.g., "Test Set for PPM").
+We then fetch the details of the selected CMDB application, including its application ID (sys_id), which is essential for the migration process.
+Creating an Application Set in the Asset Store:
+
+Once the application is selected, the system will create a new Application Set in the PlainID Asset Store.
+The Application Set acts as a container for resources that will be migrated. It uses the CMDB application ID and application name as identifiers.
+Example: If the selected application is "Test Set for PPM," an Application Set named "Test Set for PPM Application Set" will be created in the Asset Store.
+Fetching RODAN Resources Linked to the CMDB Application:
+
+After the Application Set is created, we fetch RODAN resources related to the CMDB application via the RODAN API.
+These resources represent the assets that need to be migrated into the Asset Store (e.g., files, systems, or other assets).
+Mapping RODAN Resources into the Asset Store:
+
+Once we have the RODAN resources, we create those resources in the PlainID Asset Store, linking them to the newly created Application Set.
+For each RODAN resource, a corresponding resource will be created in the Asset Store (e.g., a resource named "System Resource 1").
+Verifying Resource Migration:
+
+After migration, we can verify that the resources have been created in the Asset Store by fetching the list of resources and checking that they match the RODAN resources.
+Daily Scrum Explanation:
+"In today's work, I've implemented the functionality to migrate RODAN resources into the PlainID Asset Store via a new workflow. Here's how it works:
+
+CMDB Application Selection: First, the user selects an application from the list of CMDB applications.
+Create Application Set in Asset Store: For the selected application, a new Application Set is created in the Asset Store to act as a container.
+Fetch RODAN Resources: We then fetch the RODAN resources associated with that CMDB application.
+Migrate Resources to Asset Store: These resources are then mapped into the Asset Store as individual resources linked to the new Application Set.
+Verification: After the process, the resources are verified to ensure successful migration.
+This solution ensures that RODAN resources are properly structured in the Asset Store and can be linked to policies later."**
+
+Technical Overview in Standup:
+User Interaction: The user picks the application they want to migrate from a list of CMDB applications.
+System Workflow:
+Fetch the CMDB application details (e.g., name, application ID).
+Create a new Application Set in the Asset Store using the fetched CMDB application ID.
+Fetch RODAN resources associated with the CMDB application.
+Create resources in the Asset Store corresponding to the RODAN resources.
+Outcome: The RODAN resources are successfully migrated into the Asset Store, ready for further policy management.
+
+
 
