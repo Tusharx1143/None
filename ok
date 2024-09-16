@@ -1,19 +1,1 @@
-def get_cmdb_application_by_sys_id(application_sys_id):  
-    api_url = base_url + "/applications/" + application_sys_id + "?type=JSON"
-    try:
-        r = requests.get(api_url, auth=(cmdb_user, cmdb_password))
-        # Log the raw response from the API
-        _log.debug(f"Raw API response: {r.text}")  # Log the raw response to see what's coming back
-        response = r.json()
-        if r.status_code == HTTPStatus.NOT_FOUND:
-            _log.info("CMDB Application Not Found for sys_id: %s", application_sys_id)
-            return None
-        _log.debug("CMDB Application response: %s", json.dumps(response))
-        cmdb_app = dict()
-        cmdb_app["name"] = response["result"][0]["name"]
-        cmdb_app["sys_id"] = response["result"][0]["sys_id"]
-        return cmdb_app
-    except Exception as error:
-        _log.error("Error Fetching CMDB Application by sys_id: {}".format(str(error)))
-        raise error
 
