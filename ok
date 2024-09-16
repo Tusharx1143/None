@@ -78,10 +78,15 @@ def create_application_set_in_asset_store(cmdb_application_id, application_name)
 
 
 
-# Example usage in main script
+# migrate_cmdb_to_asset_store.py
 
+import logging
 from cmdb_application import get_cmdb_application_by_sys_id
 from policies import create_application_set_in_asset_store
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+_log = logging.getLogger(__name__)
 
 def migrate_cmdb_application_to_asset_store(cmdb_sys_id):
     """
@@ -111,6 +116,8 @@ def migrate_cmdb_application_to_asset_store(cmdb_sys_id):
         _log.error(f"CMDB Application with sys_id {cmdb_sys_id} not found.")
 
 # Example usage
-cmdb_sys_id = "c2121321unnsadn2121jn21n3i2n1"
-migrate_cmdb_application_to_asset_store(cmdb_sys_id)
+if __name__ == "__main__":
+    cmdb_sys_id = "c2121321unnsadn2121jn21n3i2n1"  # Replace with actual CMDB sys_id
+    migrate_cmdb_application_to_asset_store(cmdb_sys_id)
+
 
