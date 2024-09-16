@@ -1,1 +1,36 @@
+def create_application_set_in_asset_store(application_name, cmdb_application_id):
+    """
+    Create a new application set in the Asset Store using the CMDB application ID.
+    
+    Args:
+    - application_name (str): The name of the application.
+    - cmdb_application_id (str): The ID of the CMDB application.
+    
+    Returns:
+    - dict: The response from the Asset Store API (application set details).
+    """
+    application_set_data = {
+        "application_cmdb_sys_id": cmdb_application_id,
+        "application_set_name": f"{application_name} Application Set",
+        "application_set_description": f"Asset Store migration for {application_name}"
+    }
+    
+    try:
+        url = f"{asset_store_api_url}/applicationsets"
+        _log.info(f"Attempting to create application set at {url} with user {asset_store_user}")
+        _log.info(f"Headers: {headers}")
+        
+        # If the API requires PUT instead of POST
+        response = requests.put(url, headers=headers, data=json.dumps(application_set_data), auth=(asset_store_user, asset_store_password))
+        
+        if response.status_code == HTTPStatus.OK:
+            _log.info(f"Successfully created application set for {application_name}")
+            return response.json()
+        else:
+            response_text = response.text
+            _log.error(f"Failed to create application set for {application_name}. Status: {response.status_code}, Response: {response_text}")
+            return {}
+    except Exception as error:
+        _log.error(f"Error creating application set for {application_name}: {str(error)}")
+        return {}
 
