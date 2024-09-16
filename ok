@@ -1,1 +1,96 @@
+# cmdb_application.py
+def get_cmdb_application_by_id(application_name):
+    """
+    Fetch the CMDB application by name and return the application ID (sys_id).
+    
+    Args:
+    - application_name (str): The name of the CMDB application to fetch.
+    
+    Returns:
+    - dict: Contains the application name and sys_id.
+    """
+    try:
+        cmdb_app = get_cmdb_application(application_name)
+        if cmdb_app:
+            return {
+                "application_name": cmdb_app["name"],
+                "cmdb_application_id": cmdb_app["sys_id"]
+            }
+        else:
+            _log.error(f"CMDB Application {application_name} not found.")
+            return None
+    except Exception as error:
+        _log.error(f"Error fetching CMDB application {application_name}: {str(error)}")
+        return None
+
+
+
+# policies.py
+def create_application_set_in_asset_store(application_name, cmdb_application_id):
+    """
+    Create a new application set in the Asset Store using the CMDB application ID.
+    
+    Args:
+    - application_name (str): The name of the application.
+    - cmdb_application_id (str): The ID of the CMDB application.
+    
+    Returns:
+    - dict: The response from the Asset Store API (application set details).
+    """
+    application_set_data = {
+        "application_cmdb_sys_id": cmdb_application_id,
+        "application_set_name": f"{application_name} Application Set",
+        "application_set_description": f"Asset Store migration for {application_name}"
+    }
+    
+    try:
+        url = f"{asset_store_api_url}/applicationsets"
+        response = requests.post(url, headers=headers, data=json.dumps(application_set_data))
+        if response.status_code == HTTPStatus.OK:
+            _log.info(f"Successfully created application set for {application_name}")
+            return response.json()
+        else:
+            _log.error(f"Failed to create application set for {application_name}. Status: {response.status_code}")
+            return {}
+    except Exception as error:
+        _log.error(f"Error creating application set for {application_name}: {str(error)}")
+        return {}
+
+
+
+
+# Example Workflow
+from cmdb_application import get_cmdb_application_by_id
+from policies import create_application_set_in_asset_store
+
+def migrate_cmdb_application_to_asset_store(application_name):
+    """
+    Migrate a CMDB application and its resources to the Asset Store.
+    
+    Args:
+    - application_name (str): The name of the CMDB application to migrate.
+    
+    Returns:
+    - None
+    """
+    # Step 1: Fetch the CMDB application by name
+    cmdb_app = get_cmdb_application_by_id(application_name)
+    
+    if cmdb_app:
+        cmdb_application_id = cmdb_app["cmdb_application_id"]
+        
+        # Step 2: Create Application Set in Asset Store
+        application_set_response = create_application_set_in_asset_store(application_name, cmdb_application_id)
+        
+        if "application_set_id" in application_set_response:
+            application_set_id = application_set_response["application_set_id"]
+            _log.info(f"Application set {application_set_id} created successfully for {application_name}")
+            
+            # Step 3: Fetch and link resources (this part is already in your resource linking logic)
+            # You would link the resources to the application set here...
+            
+        else:
+            _log.error(f"Failed to create Application Set for {application_name}")
+    else:
+        _log.error(f"CMDB application {application_name} not found.")
 
