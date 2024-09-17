@@ -1,1 +1,117 @@
+A Maven Snapshot is a special version of a Maven project that indicates a work-in-progress or development state. It represents the latest code changes that are not yet finalized, typically used for ongoing development. Here's a breakdown of what it is and why it's needed:
+
+What is a Maven Snapshot?
+In Maven, versions of artifacts (like libraries or applications) are specified as numbers such as 1.0.0, 1.0.1, etc.
+
+When a version is suffixed with -SNAPSHOT (e.g., 1.0.0-SNAPSHOT), it indicates that this version is a development snapshot.
+
+A Snapshot version is dynamic and can change over time as new changes are committed, whereas a release version (like 1.0.0) is static and should never change after it's released.
+
+For example:
+
+1.0.0-SNAPSHOT: Represents the current state of development for version 1.0.0.
+1.0.0: Would represent the final, stable release of that version.
+Why do we need Maven Snapshots?
+Continuous Integration & Development:
+
+Snapshots are essential during development because they allow you to test and integrate the most recent changes in an evolving project. Each time a new build is deployed, it overwrites the previous snapshot, ensuring that teams are always working with the latest code.
+Avoiding Version Conflicts:
+
+Instead of creating a new version number for every minor code change during development, Maven Snapshots allow you to push incremental updates under the same version. This avoids cluttering your version history with tiny, incomplete versions.
+Collaboration:
+
+In larger teams, different developers or teams may depend on the latest code (snapshot) from each other. By publishing snapshots, each team can pull the most recent version of a dependency, without waiting for a formal release.
+Automatic Updates:
+
+When a dependency is marked as a snapshot, Maven knows to always check for updates to that dependency. When you run Maven, it will check the remote repository for a newer snapshot version and download it automatically if available.
+Difference Between Snapshot and Release:
+Snapshot:
+Changes over time with each build.
+Always reflects the latest code in development.
+Maven downloads a new copy of the snapshot version whenever it detects changes in the repository.
+Release:
+A finalized version that does not change.
+Once deployed, it’s considered stable and should not be modified.
+Maven caches release versions locally and doesn’t look for updates unless explicitly told.
+Example:
+If you're working on version 2.0.0 of a project but it’s not ready for release, you would tag it as 2.0.0-SNAPSHOT. Once the code is tested and ready for production, you would release it as 2.0.0.
+When to Use Snapshots:
+Use Snapshots during active development when frequent changes are being made and you need to distribute the latest builds for testing or integration.
+Use Releases for stable, production-ready versions that will not change once published.
+Why Snapshots are Important:
+Flexibility: During rapid development, they provide flexibility to deploy new versions without finalizing them.
+Streamlined Development: They prevent constant versioning, allowing the development process to be more fluid.
+Dependency Management: Developers can always pull the most recent version of code without needing to manually update dependencies every time.
+In your case, you're likely using 2.0.0-SNAPSHOT for your PlainID Management Automation project because it's still in development and undergoing changes, with a formal 2.0.0 release to follow once it's ready.
+
+
+
+
+
+--------------
+
+
+
+
+Semantic Versioning (SemVer) is a versioning scheme used in software development that conveys meaning about the underlying changes in a release. It follows a structured format of MAJOR.MINOR.PATCH, allowing both developers and users to understand the significance of a version number at a glance.
+
+Format: MAJOR.MINOR.PATCH
+The SemVer format consists of three numbers separated by periods, and they are interpreted as follows:
+
+1. MAJOR version (X.Y.Z):
+X represents the MAJOR version.
+Increment the MAJOR version when you make incompatible API changes or break backward compatibility.
+For example, moving from 1.0.0 to 2.0.0 signals that existing code written for version 1.x may no longer work with version 2.0.0 because of changes that require users to adapt.
+2. MINOR version (X.Y.Z):
+Y represents the MINOR version.
+Increment the MINOR version when you add new backward-compatible functionality.
+For example, moving from 1.0.0 to 1.1.0 indicates new features or improvements have been added, but existing functionality remains unchanged and backward-compatible.
+3. PATCH version (X.Y.Z):
+Z represents the PATCH version.
+Increment the PATCH version when you make backward-compatible bug fixes.
+For example, moving from 1.0.0 to 1.0.1 means there’s been a minor update, such as a bug fix or security patch, without introducing new features or breaking changes.
+Versioning Rules
+Semantic Versioning has strict rules about when and how to increment each part of the version number:
+
+MAJOR version:
+
+Incremented for incompatible API changes that may break existing code or introduce major overhauls.
+MINOR version:
+
+Incremented for backward-compatible new features or improvements. Users can update without worrying about breaking changes.
+PATCH version:
+
+Incremented for backward-compatible bug fixes and performance enhancements that don’t affect the API.
+Pre-release and Build Metadata
+Semantic Versioning also supports pre-release versions and build metadata to provide additional information about a release:
+
+Pre-release versions: Denoted by appending a hyphen and identifier, like 1.0.0-alpha, 1.0.0-beta, or 1.0.0-rc.1. These versions indicate the software is in an incomplete state and not yet ready for general release.
+
+Example: 1.0.0-alpha or 1.0.0-beta for early releases during development stages.
+Build Metadata: Appended with a plus sign, like 1.0.0+build201, providing information relevant to the build process (e.g., build numbers or timestamps) that doesn’t affect the versioning logic.
+
+Example: 1.0.0+build12345 can signify the build used for this release.
+Why Use Semantic Versioning?
+Clear Communication: Semantic versioning provides a clear way to communicate what changes have been made in a release, making it easier for developers to understand the impact of upgrading to a newer version.
+Dependency Management: With clear rules for version increments, other projects that depend on your code (or libraries) can easily manage updates, ensuring compatibility without unexpected issues.
+Stability: Using version numbers consistently allows teams to manage releases better, reducing the likelihood of introducing breaking changes in minor or patch updates.
+Key Benefits:
+Predictability: Developers can predict the scope of changes just by looking at the version number.
+Backward Compatibility: It clarifies when new versions are backward-compatible, making upgrades smoother.
+Safe Upgrading: Minor and patch versions can typically be upgraded without significant risk of breaking existing functionality.
+Example:
+Version 2.5.4:
+Major 2: Version 2.x contains breaking changes compared to version 1.x.
+Minor 5: New features have been added since version 2.4.x, but it remains backward-compatible with version 2.0.0.
+Patch 4: The fourth set of bug fixes or small improvements for version 2.5.x.
+Example of When to Use:
+If you're working on a new feature that doesn't break any existing functionality, you increment the MINOR version (e.g., 1.1.0).
+If you fix a bug, but the fix is compatible with previous versions, you increment the PATCH version (e.g., 1.0.1).
+If you change something that is not backward-compatible (such as renaming a method), you increment the MAJOR version (e.g., 2.0.0).
+In Summary:
+MAJOR: Incompatible API changes.
+MINOR: Backward-compatible new features.
+PATCH: Backward-compatible bug fixes.
+
+
 
