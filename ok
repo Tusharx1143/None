@@ -29,3 +29,18 @@ application_set_data = {
         ]
     }
 
+    cmdb_app = get_cmdb_application_by_id(application_name)
+    
+    if cmdb_app:
+        cmdb_application_id = cmdb_app["cmdb_application_id"]
+        
+        # Step 2: Create Application Set in Asset Store
+        application_set_response = create_application_set_in_asset_store(application_name, cmdb_application_id)
+        
+        if "application_set_id" in application_set_response:
+            application_set_id = application_set_response["application_set_id"]
+            _log.info(f"Application set {application_set_id} created successfully for {application_name}")
+        else:
+            _log.error(f"Failed to create Application Set for {application_name}")
+    else:
+        _log.error(f"CMDB application {application_name} not found.")
