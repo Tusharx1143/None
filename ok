@@ -116,3 +116,281 @@ If no tests are being discovered, make sure the pytest command is pointing to th
 Test Reporting:
 
 Make sure that the report.xml is being generated. If not, there might be an issue with the test execution.
+
+---------------------------------------------------------------------------------------------------
+
+
+
+To update the existing Application Set with the proper format as shown in the last image (with resource types and instances), we need to modify the create_application_set_in_asset_store function in your policies.py 
+file and make sure the request contains all necessary data. Here's how you can update the function and make changes in add_application.py to check and update the existing Application Set.
+
+
+def create_application_set_in_asset_store(application_name, cmdb_application_id):
+    """
+    Create or update an Application Set in the Asset Store.
+    
+    Args:
+    - application_name (str): The name of the application set.
+    - cmdb_application_id (str): The ID of the CMDB application.
+    
+    Returns:
+    - dict: Response from the Asset Store.
+    """
+    # Define the application set data with complete information
+    application_set_data = {
+        "applicationSet": f"{application_name} Application Set",
+        "applicationName": application_name,
+        "applicationSetCmdbApplicationInstances": [
+            {
+                "cmdbApplicationInstanceId": "4c14231d1baf00956c95354604bcbee"  # Example instance ID
+            }
+        ],
+        "applicationSetResourceTypes": [
+            {
+                "resourceType": "Resource Type 1",
+                "attributes": [
+                    {
+                        "attribute": "Attribute Type 1",
+                        "dataType": "String"
+                    },
+                    {
+                        "attribute": "Attribute Type 2",
+                        "dataType": "Numeric"
+                    }
+                ],
+                "actions": [
+                    {
+                        "action": "Readonly"
+                    }
+                ]
+            }
+        ],
+        "cmdbApplicationId": cmdb_application_id,
+        "cmdbApplicationDescription": application_name
+    }
+
+    try:
+        _log.info(f"Attempting to create or update application set at {asset_store_test_url}")
+        _log.info(f"Payload: {application_set_data}")
+        _log.info(f"Headers: {headers}")
+        
+        response = requests.put(
+            asset_store_test_url,
+            headers=headers,
+            data=json.dumps(application_set_data),
+            auth=(asset_store_user, asset_store_password)
+        )
+        
+        if response.status_code == HTTPStatus.OK:
+            _log.info(f"Successfully created or updated application set for {application_name}")
+            return response.json()
+        else:
+            response_text = response.text
+            _log.error(f"Failed to create or update application set for {application_name}. Status: {response.status_code}, Response: {response_text}")
+            return {}
+    except Exception as error:
+        _log.error(f"Error creating or updating application set for {application_name}: {str(error)}")
+        return {}
+
+
+
+
+
+Changes to add_application.py for Updating Application Set
+
+def migrate_cmdb_application_to_asset_store(application_name):
+    """
+    Migrate or update a CMDB application and its resources to the Asset Store.
+    
+    Args:
+    - application_name (str): The name of the CMDB application to migrate.
+    
+    Returns:
+    - None
+    """
+    cmdb_app = get_cmdb_application_by_id(application_name)
+    
+    if cmdb_app:
+        cmdb_application_id = cmdb_app["cmdb_application_id"]
+        
+        # Step 2: Create or Update Application Set in Asset Store
+        application_set_response = create_application_set_in_asset_store(application_name, cmdb_application_id)
+        
+        if "applicationSet" in application_set_response:
+            _log.info(f"Application set for {application_name} created or updated successfully")
+        else:
+            _log.error(f"Failed to create or update Application Set for {application_name}")
+    else:
+        _log.error(f"CMDB application {application_name} not found.")
+
+
+if __name__ == "__main__":
+    application_name = "PPM"  # Replace with your application name
+    migrate_cmdb_application_to_asset_store(application_name)
+
+
+
+
+Complete Information: Ensure you are sending a complete JSON payload with all necessary attributes, resource types, and instances.
+Method: Use the PUT method to update an existing Application Set.
+Instance ID: Ensure that cmdbApplicationInstanceId is correct for your use case.
+Logging: Logs will help you verify the payload sent and check the response.
+Verification:
+After updating the Application Set, check the dashboard to see if the data appears correctly.
+Use a GET request to retrieve the Application Set and verify that it contains all the information.
+If the dashboard is still not loading, the issue might be due to incorrect data formatting or missing required fields. You can verify this by comparing the retrieved Application Set data with the expected format in the documentation.
+
+
+
+--------
+
+Yes, you need to include both cmdbApplicationId and cmdbApplicationDescription in the JSON payload when creating or updating the Application Set.
+These fields are part of the structure that the Asset Store API expects for each Application Set. Here's where they go:
+
+application_set_data = {
+    "applicationSet": f"{application_name} Application Set",  # Name of the Application Set
+    "applicationName": application_name,                      # Name of the Application
+    "applicationSetCmdbApplicationInstances": [
+        {
+            "cmdbApplicationInstanceId": "4c14231d1baf00956c95354604bcbee"  # Example instance ID
+        }
+    ],
+    "applicationSetResourceTypes": [
+        {
+            "resourceType": "Resource Type 1",
+            "attributes": [
+                {
+                    "attribute": "Attribute Type 1",
+                    "dataType": "String"
+                },
+                {
+                    "attribute": "Attribute Type 2",
+                    "dataType": "Numeric"
+                }
+            ],
+            "actions": [
+                {
+                    "action": "Readonly"
+                }
+            ]
+        }
+    ],
+    "cmdbApplicationId": cmdb_application_id,                 # CMDB Application ID goes here
+    "cmdbApplicationDescription": application_name            # Description of the CMDB Application
+}
+
+
+Explanation:
+cmdbApplicationId: This is the unique identifier for the CMDB application you want to associate with the Application Set. It helps the system identify the specific application in the CMDB.
+cmdbApplicationDescription: This is a human-readable description of the CMDB application. It is usually the application name or a brief description of what the application does.
+Where to Include cmdbApplicationId:
+cmdbApplicationId should be included at the root level of your application_set_data dictionary.
+You retrieve this value using your get_cmdb_application_by_id function and pass it to the create_application_set_in_asset_store function.
+
+ policies.py:
+
+def create_application_set_in_asset_store(application_name, cmdb_application_id):
+    """
+    Create or update an Application Set in the Asset Store.
+    
+    Args:
+    - application_name (str): The name of the application set.
+    - cmdb_application_id (str): The ID of the CMDB application.
+    
+    Returns:
+    - dict: Response from the Asset Store.
+    """
+    # Define the application set data with complete information
+    application_set_data = {
+        "applicationSet": f"{application_name} Application Set",
+        "applicationName": application_name,
+        "applicationSetCmdbApplicationInstances": [
+            {
+                "cmdbApplicationInstanceId": "4c14231d1baf00956c95354604bcbee"  # Example instance ID
+            }
+        ],
+        "applicationSetResourceTypes": [
+            {
+                "resourceType": "Resource Type 1",
+                "attributes": [
+                    {
+                        "attribute": "Attribute Type 1",
+                        "dataType": "String"
+                    },
+                    {
+                        "attribute": "Attribute Type 2",
+                        "dataType": "Numeric"
+                    }
+                ],
+                "actions": [
+                    {
+                        "action": "Readonly"
+                    }
+                ]
+            }
+        ],
+        "cmdbApplicationId": cmdb_application_id,                 # CMDB Application ID goes here
+        "cmdbApplicationDescription": application_name            # Description of the CMDB Application
+    }
+
+    try:
+        _log.info(f"Attempting to create or update application set at {asset_store_test_url}")
+        _log.info(f"Payload: {application_set_data}")
+        _log.info(f"Headers: {headers}")
+        
+        response = requests.put(
+            asset_store_test_url,
+            headers=headers,
+            data=json.dumps(application_set_data),
+            auth=(asset_store_user, asset_store_password)
+        )
+        
+        if response.status_code == HTTPStatus.OK:
+            _log.info(f"Successfully created or updated application set for {application_name}")
+            return response.json()
+        else:
+            response_text = response.text
+            _log.error(f"Failed to create or update application set for {application_name}. Status: {response.status_code}, Response: {response_text}")
+            return {}
+    except Exception as error:
+        _log.error(f"Error creating or updating application set for {application_name}: {str(error)}")
+        return {}
+
+
+
+In add_application.py:
+
+def migrate_cmdb_application_to_asset_store(application_name):
+    """
+    Migrate or update a CMDB application and its resources to the Asset Store.
+    
+    Args:
+    - application_name (str): The name of the CMDB application to migrate.
+    
+    Returns:
+    - None
+    """
+    cmdb_app = get_cmdb_application_by_id(application_name)
+    
+    if cmdb_app:
+        cmdb_application_id = cmdb_app["cmdb_application_id"]
+        
+        # Step 2: Create or Update Application Set in Asset Store
+        application_set_response = create_application_set_in_asset_store(application_name, cmdb_application_id)
+        
+        if "applicationSet" in application_set_response:
+            _log.info(f"Application set for {application_name} created or updated successfully")
+        else:
+            _log.error(f"Failed to create or update Application Set for {application_name}")
+    else:
+        _log.error(f"CMDB application {application_name} not found.")
+
+
+if __name__ == "__main__":
+    application_name = "PPM"  # Replace with your application name
+    migrate_cmdb_application_to_asset_store(application_name)
+
+
+Ensure you are passing the cmdb_application_id properly from the add_application.py to the policies.py function, and that the JSON structure you send is complete as per the API requirements.
+
+
