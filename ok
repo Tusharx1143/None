@@ -1,1 +1,31 @@
+application_set_data = {
+        "applicationSet": application_name,  # Application set name
+        "applicationName": application_name,  # Application name
+        "cmdbApplicationId": cmdb_application_id,  # CMDB application ID
+        "applicationSetCmdbApplicationInstances": [
+            {
+                "cmdbApplicationInstanceId": "4c14231d1ba8f09056c95354604bcbee"  # Instance ID example, replace with actual
+            }
+        ],
+        "applicationSetResourceTypes": [
+            {
+                "resourceType": "Resource Type 1",  # Replace with actual resource type
+                "attributes": [
+                    {
+                        "attribute": "Attribute Type 1",
+                        "dataType": "String"
+                    },
+                    {
+                        "attribute": "Attribute Type 2",
+                        "dataType": "Numeric"
+                    }
+                ],
+                "actions": [
+                    {
+                        "action": "ReadOnly"
+                    }
+                ]
+            }
+        ]
+    }
 
