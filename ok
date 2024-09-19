@@ -1,1 +1,118 @@
+Step-by-Step Guide for Jenkins Pipeline Setup
+Project Structure Understanding:
 
+You have a unittests directory containing the test files (e.g., test_action.py, test_application.py, etc.).
+You also have a utils directory containing the main code files (e.g., action.py, add_application.py, etc.).
+The test files seem to follow the standard naming convention for unittest or pytest.
+Creating a Jenkinsfile: You’ll need to create a Jenkinsfile in the root of your repository. This file will tell Jenkins how to set up the environment, install dependencies, and run your tests.
+
+Jenkinsfile Content: Use the following template for your Jenkinsfile. This script is customized to your setup and uses pytest to run the tests.
+
+pipeline {
+    agent { label 'rhel8' } // Ensure this label matches your Jenkins node's label
+    environment {
+        PYTHON_ENV = '/usr/bin/python3.11' // Path to Python 3.11 executable
+        VENV_DIR = 'venv' // Directory for virtual environment
+    }
+    stages {
+        stage('Prepare Environment') {
+            steps {
+                sh '''
+                    # Check if Python 3.11 is available
+                    ${PYTHON_ENV} --version
+                    
+                    # Create a virtual environment
+                    ${PYTHON_ENV} -m venv ${VENV_DIR}
+                    
+                    # Activate virtual environment
+                    source ${VENV_DIR}/bin/activate
+                    
+                    # Upgrade pip to the latest version
+                    pip install --upgrade pip
+                '''
+            }
+        }
+        stage('Install Dependencies') {
+            steps {
+                sh '''
+                    # Activate virtual environment
+                    source ${VENV_DIR}/bin/activate
+                    
+                    # Install dependencies from requirements.txt
+                    if [ -f requirements.txt ]; then
+                        pip install -r requirements.txt
+                    fi
+                '''
+            }
+        }
+        stage('Run Unit Tests') {
+            steps {
+                sh '''
+                    # Activate virtual environment
+                    source ${VENV_DIR}/bin/activate
+                    
+                    # Run all tests in the unittests folder
+                    pytest unittests/ --junitxml=report.xml
+                '''
+            }
+        }
+    }
+    post {
+        always {
+            // Archive test results to Jenkins
+            junit 'report.xml'
+        }
+    }
+}
+
+
+
+Step-by-Step Explanation:
+
+agent { label 'rhel8' }: Specifies the Jenkins node to run this pipeline. Ensure this label matches the node where Python 3.11 is installed.
+Environment Variables:
+PYTHON_ENV: Path to Python 3.11 on your system.
+VENV_DIR: Directory name for the virtual environment.
+Stages:
+Prepare Environment:
+Checks Python 3.11 version.
+Creates a virtual environment in the specified directory.
+Upgrades pip to the latest version.
+Install Dependencies:
+Installs dependencies from requirements.txt (if present).
+Run Unit Tests:
+Runs all test files in the unittests/ directory using pytest.
+Generates a report in report.xml format for Jenkins to parse.
+Post Actions:
+Archives the test results (report.xml) in Jenkins for review.
+Adding Jenkinsfile to Your Repository:
+
+Save the Jenkinsfile in the root of your repository.
+Commit and push it to your version control system.
+Create and Configure Jenkins Job:
+
+In Jenkins, create a new pipeline job.
+Link the job to your repository (where the Jenkinsfile is located).
+Ensure the Jenkins node labeled rhel8 is available and has Python 3.11 installed.
+Run the Jenkins Job:
+
+Click Build Now to run the job.
+Monitor the console output for any errors.
+Review Test Results:
+
+After the build completes, you should see the test results in the Test Results section of the Jenkins job.
+Troubleshooting Tips:
+Virtual Environment Issues:
+
+Make sure the virtual environment is created successfully by checking the console output.
+If the virtual environment is not activating properly, check the path of PYTHON_ENV.
+Dependency Installation:
+
+Ensure that your requirements.txt file is present and correctly formatted.
+If there are issues with installing dependencies, they will be shown in the console output.
+Test Execution:
+
+If no tests are being discovered, make sure the pytest command is pointing to the correct directory (unittests/).
+Test Reporting:
+
+Make sure that the report.xml is being generated. If not, there might be an issue with the test execution.
