@@ -1,4 +1,1 @@
-So after creating the PPM ApplicationSet in the Asset Store successfully.
-The next steps should be fetching the entitlements from RODAN for the PPM resources.
-and if the necessary actions (like 'View') exist in the Asset Store. If not, they will be created.
 
