@@ -1,1 +1,372 @@
+Step 1: Create ApplicationSet in Asset Store
+API Endpoint: /asset/api/v1/application-sets
+Method: POST
+Headers:
+Content-Type: application/json
+
+{
+  "applicationSet": "PPM",
+  "applicationSetDescription": "Application Set for PPM",
+  "applicationSetCmdbApplicationInstances": [],
+  "applicationSetResourceTypes": [],
+  "cmdbApplicationId": "e8767abe4f348700c5ce44f18110c764",
+  "cmdbApplicationDescription": "PPM"
+}
+
+------------
+
+Step 2: Fetch the RODAN Entitlements
+You will need to query the RODAN system using the following information:
+Group: ppm-plainid-developers
+Resource: /ppm/PPM/Administration/Resource
+Action: View
+API Endpoint (RODAN): This depends on your RODAN system. Assuming it is a GET request.
+Method: GET
+Headers: Add the necessary headers for authentication and other required fields.
+Query Parameters:
+group: ppm-plainid-developers
+resource: /ppm/PPM/Administration/Resource
+action: View
+Purpose: To fetch the entitlements for the given group, resource, and action.
+
+--------
+
+Step 3: Create Dynamic Swarm Group in PlainID (if not already created)
+API Endpoint: /rest/v1/group/create (from your PlainID service)
+Method: POST
+Headers:
+Content-Type: application/json
+
+{
+  "groupType": "swarm",
+  "groupName": "ppm-plainid-developers",
+  "groupDescription": "Dynamic PPM testing"
+}
+
+----------------
+
+
+Step 4: Create/Update Asset in ApplicationSet in Asset Store
+API Endpoint: /asset/api/v1/resources
+Method: PUT
+Headers:
+Content-Type: application/json
+Query Parameters:
+applicationSet: PPM
+cmdbApplicationId: e8767abe4f348700c5ce44f18110c764
+resourceType: Resource_Type (replace with the actual resource type if different)
+
+{
+  "resourceValues": [
+    "/ppm/PPM/Administration/Resource"
+  ],
+  "resourceAttributes": [
+    {
+      "attribute": "attributeType",
+      "attributeValues": [
+        "String"
+      ]
+    }
+  ]
+}
+
+
+Purpose: This appends the resource /ppm/PPM/Administration/Resource to the ApplicationSet "PPM".
+------
+
+Step 5: Create a Policy in PlainID
+API Endpoint: /rest/permission
+Method: PUT
+Headers:
+Content-Type: application/json
+
+
+{
+  "objectType": "POLICY_OBJ",
+  "name": "/ppm/PPM/Administration/Resource_View",
+  "description": "Policy for /ppm/PPM/Administration/Resource with action View",
+  "namespace": "namespace-id",  // Replace with the actual namespace ID
+  "namespaceUsage": "PRIVATE",
+  "active": true,
+  "restricted": false
+}
+
+--------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Create an ApplicationSet in the Asset Store (if not already done).
+
+Fetch RODAN entitlements using the query string.
+
+Add the resource and action to the existing ApplicationSet in the Asset Store.
+
+Ensure the Asset Store updates reflect in the PlainID UI.
+
+Create a dynamic group in PlainID for the Swarm group.
+
+Create a policy in PlainID and link the resource, action, and group.
+
+Verify that everything is set up correctly in PlainID.
+
+Detailed Steps
+Step 1: Create an ApplicationSet in the Asset Store
+Since you've already created the ApplicationSet named "PPM" in the Asset Store, we can proceed to the next step. If not, you would create it using the following API call:
+
+Method: POST
+
+Endpoint: /asset/api/v1/application-sets
+
+Headers: Content-Type: application/json
+
+Body:
+
+json
+Copy code
+{
+  "applicationSet": "PPM",
+  "applicationSetDescription": "PPM",
+  "applicationSetCmdbApplicationInstances": [],
+  "applicationSetResourceTypes": [],
+  "cmdbApplicationId": "e8767abe4f348700c5ce44f18110c764",
+  "cmdbApplicationDescription": "PPM"
+}
+Step 2: Fetch RODAN Entitlements
+Fetch the entitlements from RODAN for the specified resource, action, and group.
+
+Resource: /ppm/PPM/Administration/Resource
+Action: View
+Group: ppm-plainid-developers
+Procedure:
+
+Use the RODAN API to retrieve entitlements.
+
+Example Query String:
+
+javascript
+Copy code
+resource=/ppm/PPM/Administration/Resource&action=View
+Expected Response:
+
+json
+Copy code
+{
+  "entitlements": {
+    "entitlement": [
+      {
+        "resource": "/ppm/PPM/Administration/Resource",
+        "action": "View",
+        "group": "ppm-plainid-developers",
+        "deny": "false"
+      }
+    ]
+  }
+}
+Notes:
+
+Ensure you have the necessary authentication and permissions to access the RODAN API.
+If you encounter any issues, consult the RODAN API documentation or contact your internal support team.
+Step 3: Add Resource and Action to the ApplicationSet in the Asset Store
+Step 3.1: Create Resource Type (if not already exists)
+
+Method: POST
+
+Endpoint: /asset/api/v1/resources/resource-types
+
+Headers: Content-Type: application/json
+
+Body:
+
+json
+Copy code
+{
+  "applicationSet": "PPM",
+  "cmdbApplicationId": "e8767abe4f348700c5ce44f18110c764",
+  "resourceType": "RODAN",
+  "resourceTypeDescription": "Resources from RODAN"
+}
+Notes:
+
+If the resource type "RODAN" already exists, you can skip this step.
+You can check existing resource types by fetching the ApplicationSet details.
+Step 3.2: Add Resource to the ApplicationSet
+
+Method: PUT
+
+Endpoint: /asset/api/v1/resources
+
+Query Parameters:
+
+makefile
+Copy code
+applicationSet=PPM
+cmdbApplicationId=e8767abe4f348700c5ce44f18110c764
+resourceType=RODAN
+Headers: Content-Type: application/json
+
+Body:
+
+json
+Copy code
+{
+  "resourceValues": [
+    "/ppm/PPM/Administration/Resource"
+  ],
+  "resourceAttributes": []
+}
+Notes:
+
+Ensure the resource path matches exactly with the one used in RODAN.
+You can add multiple resources by including them in the resourceValues array.
+Step 3.3: Verify the Action Exists in the Asset Store
+
+Depending on your Asset Store implementation, actions may be managed separately.
+If actions need to be defined, ensure that the action "View" is available in the Asset Store.
+Step 4: Ensure the Asset Store Updates Reflect in the PlainID UI
+The Asset Store should synchronize with PlainID, making the new resource available.
+Note: Synchronization may take some time depending on the system configuration.
+Step 5: Create a Dynamic Group in PlainID
+Check if the Group Exists:
+
+Before creating the group, check if "ppm-plainid-developers" already exists in PlainID.
+Create the Group (if not exists):
+
+Method: POST
+
+Endpoint: /api/groups
+
+Headers:
+
+Content-Type: application/json
+Include authentication headers as required.
+Body:
+
+json
+Copy code
+{
+  "name": "ppm-plainid-developers",
+  "description": "Group for PPM PlainID Developers",
+  "groupType": "swarm",
+  "namespace": "global"
+}
+Notes:
+
+Replace "namespace": "global" with the appropriate namespace if needed.
+Ensure you have permissions to create groups in PlainID.
+Step 6: Create a Policy in PlainID
+Step 6.1: Create the Policy
+
+Method: PUT
+
+Endpoint: /rest/permission
+
+Headers:
+
+Content-Type: application/json
+Include authentication headers.
+Include the namespace header if required.
+Body:
+
+json
+Copy code
+{
+  "objectType": "Policy",
+  "name": "PPM-View-Access",
+  "description": "Access policy for PPM View action",
+  "namespace": "NamespaceID",  // Replace with the actual namespace ID
+  "namespaceUsage": "PRIVATE",
+  "active": true,
+  "restricted": false
+}
+Notes:
+
+Ensure the namespace is correctly specified.
+The policy name should be unique within the namespace.
+Step 6.2: Link Resources and Actions to the Policy
+
+Retrieve IDs:
+
+Policy ID: Obtained from the response when creating the policy.
+Resource ID: Retrieve using the resource name /ppm/PPM/Administration/Resource.
+Action ID: Retrieve the ID for the action "View" from PlainID.
+Link the Resource and Action:
+
+Method: POST
+
+Endpoint: /rest/xresource/link
+
+Headers:
+
+Content-Type: application/json
+Include authentication headers.
+Body:
+
+json
+Copy code
+[
+  {
+    "permission": "PolicyID",  // Replace with the actual policy ID
+    "resources": [
+      {
+        "resource": "ResourceID",  // Replace with the actual resource ID
+        "actions": ["ActionID"]    // Replace with the actual action ID
+      }
+    ]
+  }
+]
+Notes:
+
+Ensure all IDs are correctly retrieved and substituted in the body.
+Step 7: Link the Dynamic Group to the Policy
+Method: POST
+
+Endpoint: /rest/permission/{PolicyID}/permissionRule/dynamic
+
+Replace {PolicyID} with the actual policy ID.
+Headers:
+
+Content-Type: application/json
+Include authentication headers.
+Include namespace: NamespaceID if required.
+Body:
+
+json
+Copy code
+["GroupID"]
+Notes:
+
+Replace GroupID with the actual ID of the group "ppm-plainid-developers".
+This links the group to the policy, granting access as defined.
+
 
