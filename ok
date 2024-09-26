@@ -1,1 +1,16 @@
+stage('Setup Python Environment') {
+    steps {
+        script {
+            // Debugging step
+            sh 'echo "Current Path: $PATH"'
+            sh 'ls /usr/bin/' 
+            sh '''
+                /usr/bin/python3.11 --version || echo "Python 3.11 not found!"
+                /usr/bin/python3.11 -m venv ${VENV_DIR}
+                source ${VENV_DIR}/bin/activate
+                pip install --upgrade pip
+            '''
+        }
+    }
+}
 
