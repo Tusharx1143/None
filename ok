@@ -1,1 +1,106 @@
+How the pom.xml Knows to Run Python Unittests
+
+The pom.xml is configured with the exec-maven-plugin, which specifies commands that Maven should run during the build process. In the configuration provided earlier, the exec-maven-plugin is set up to activate a Python virtual environment and run Python tests in the unittests/ directory.
+
+Here’s how Maven knows to run the Python tests:
+
+1. exec-maven-plugin Configuration in pom.xml:
+
+The exec-maven-plugin in the pom.xml was configured with a script that:
+
+<plugin>
+    <groupId>org.codehaus.mojo</groupId>
+    <artifactId>exec-maven-plugin</artifactId>
+    <version>3.0.0</version>
+    <executions>
+        <execution>
+            <id>run-python-tests</id>
+            <phase>test</phase> <!-- This links it to the Maven test phase -->
+            <goals>
+                <goal>exec</goal>
+            </goals>
+            <configuration>
+                <executable>sh</executable>
+                <arguments>
+                    <argument>-c</argument>
+                    <argument>
+                        source venv/bin/activate &amp;&amp; pytest unittests/ --junitxml=report.xml
+                    </argument>
+                </arguments>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+
+Explanation:
+
+During the test phase of the Maven build, the plugin executes the script:
+
+source venv/bin/activate && pytest unittests/ --junitxml=report.xml
+
+This command activates the Python virtual environment and runs pytest in the unittests/ directory.
+
+It expects the Python tests to be located in the unittests/ directory in your repository.
+
+
+
+
+2. No Need to Include the unittests Folder in the <include> Tag:
+
+The <include> tag in the pom.xml under the maven-lps-plugin or any similar packaging plugin is used for including specific folders or files in the final package/archive.
+
+This is usually used for non-standard files or folders you want to include in your deployable artifact, such as scripts or resources.
+
+In your case, the unittests/ folder is not something you would want to package for deployment, so you don't need to add it there.
+
+
+
+3. How Jenkins Executes the Unittests:
+
+The Jenkinsfile triggers the Maven build using the runMaven function.
+
+When Maven reaches the test phase, the exec-maven-plugin runs the Python tests defined in the pom.xml.
+
+Jenkins, via the Jenkinsfile, is only responsible for invoking the Maven build process and setting up the environment (like the Python virtual environment).
+
+
+
+
+Summary of Required Steps:
+
+1. Ensure unittests/ is in Your Repository:
+
+The unittests/ folder should be in your repository at the root level (or in the expected path relative to where Maven is run).
+
+
+
+2. Ensure exec-maven-plugin Configuration is Correct:
+
+Verify that the exec-maven-plugin configuration in the pom.xml points to the correct directory and file structure for your Python tests.
+
+Example:
+
+<configuration>
+    <executable>sh</executable>
+    <arguments>
+        <argument>-c</argument>
+        <argument>
+            source venv/bin/activate && pytest unittests/ --junitxml=report.xml
+        </argument>
+    </arguments>
+</configuration>
+
+
+
+3. No Need to Add unittests to <include>:
+
+The unittests/ directory is for testing purposes and is not required in the final build artifact.
+
+Leave the <include> section in the maven-lps-plugin or any other packaging plugin as it is unless there is a specific reason to package the unittests folder.
+
+
+
+
+By following these guidelines, Maven and Jenkins will correctly execute your Python unittests during the build process without the need to include the unittests/ folder in the package. If you need further clarification or assistance, feel free to ask!
+
 
