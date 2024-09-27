@@ -1,1 +1,29 @@
+        stage('Setup Python Environment') {
+            steps {
+                script {
+                    // Check and set up Python environment
+                    sh '''
+                        # Check if Python 3.11 is available
+                        if ! command -v ${PYTHON_ENV} &> /dev/null
+                        then
+                            echo "Python 3.11 not found at ${PYTHON_ENV}! Please check the PYTHON_ENV variable."
+                            exit 1
+                        fi
 
+                        # Set up the virtual environment if Python 3.11 is available
+                        ${PYTHON_ENV} --version
+                        ${PYTHON_ENV} -m venv ${VENV_DIR}
+                        source ${VENV_DIR}/bin/activate
+                        pip install --upgrade pip
+
+                        # Install dependencies from requirements.txt
+                        if [ -f "${REQUIREMENTS_PATH}" ]; then
+                            pip install -r ${REQUIREMENTS_PATH}
+                        else
+                            echo "Requirements file not found at ${REQUIREMENTS_PATH}"
+                            exit 1
+                        fi
+                    '''
+                }
+            }
+        }
