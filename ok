@@ -1,1 +1,20 @@
+<plugin>
+    <groupId>org.codehaus.mojo</groupId>
+    <artifactId>exec-maven-plugin</artifactId>
+    <version>3.0.0</version>
+    <executions>
+        <execution>
+            <id>run-python-tests</id>
+            <goals>
+                <goal>exec</goal>
+            </goals>
+            <configuration>
+                <executable>pytest</executable>
+                <arguments>
+                    <argument>unittests</argument>
+                </arguments>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
 
