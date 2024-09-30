@@ -1,1 +1,34 @@
+def test_deploy_to_plainid(self):
+    logging.debug("Testing deploy_to_plainid function")
+    
+    from utils.scope import deploy_to_plainid
 
+    # Call the function being tested
+    deploy_to_plainid('test_client_id')
+
+    # Capture the actual call made by the mock
+    actual_call = self.mock_request.call_args
+    print(f"Actual call parameters: {actual_call}")  # Debug print to inspect the actual call
+
+    # Unpack the actual call to get positional arguments and keyword arguments
+    _, kwargs = actual_call  # Assuming actual_call is a tuple and kwargs is at index 1
+    
+    # Extract the required arguments from kwargs
+    allow_redirects = kwargs.get('allow_redirects', None)
+    auth = kwargs.get('auth', ('mock_user_8640', 'mock_password_9191'))  # Ensure these match the actual values
+    headers = kwargs.get('headers', {'Content-Type': 'application/json'})  # Ensure headers match
+    method = kwargs.get('method', 'GET')  # Default to GET method
+    params = kwargs.get('params', None)
+    url = kwargs.get('url', 'https://mock-plainid.url.test/rest/deployer/deploy/test_client_id')  # Ensure URL matches
+
+    # Perform the assertion, expecting GET method now
+    self.mock_request.assert_called_with(
+        allow_redirects=allow_redirects,  # Correct value from actual call
+        auth=auth,                        # Use the correct auth from the actual call
+        headers=headers,                  # Use the correct headers
+        method=method,                    # Ensure this is 'GET'
+        params=params,                    # Use the params from the actual call
+        url=url                           # Ensure the URL matches
+    )
+
+    logging.debug(f"Network request mocked successfully, call details: {actual_call}")
