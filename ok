@@ -1,36 +1,177 @@
-<plugin>
-    <groupId>org.codehaus.mojo</groupId>
-    <artifactId>exec-maven-plugin</artifactId>
-    <version>3.0.0</version>
-    <executions>
-        <execution>
-            <id>activate-venv</id>
-            <phase>test</phase>
-            <goals>
-                <goal>exec</goal>
-            </goals>
-            <configuration>
-                <executable>bash</executable>
-                <arguments>
-                    <argument>-c</argument>
-                    <argument>source ${project.basedir}/venv/bin/activate</argument>
-                </arguments>
-            </configuration>
-        </execution>
+Here is the full pom.xml and Jenkinsfile configuration based on your requirements, which should resolve the No module named xmlrunner issue by using the correct Python virtual environment explicitly.
 
-        <execution>
-            <id>run-tests</id>
-            <phase>test</phase>
-            <goals>
-                <goal>exec</goal>
-            </goals>
-            <configuration>
-                <executable>bash</executable>
-                <arguments>
-                    <argument>-c</argument>
-                    <argument>python -m xmlrunner discover -s unittests -p "*.py" -o reports/</argument>
-                </arguments>
-            </configuration>
-        </execution>
-    </executions>
-</plugin>
+Full pom.xml Configuration
+
+The pom.xml file is set to run Python tests using xmlrunner and exec-maven-plugin, ensuring the virtual environment is used correctly by pointing explicitly to the virtual environment’s Python interpreter.
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <groupId>com.example</groupId>
+    <artifactId>plainid-management-automation</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <build>
+        <plugins>
+            <!-- Exec Maven Plugin to run Python tests with xmlrunner -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <!-- Explicitly using Python from virtual environment -->
+                            <executable>${project.basedir}/venv/bin/python</executable>
+                            <arguments>
+                                <argument>-m</argument>
+                                <argument>xmlrunner</argument>
+                                <argument>discover</argument>
+                                <argument>-s</argument>
+                                <argument>unittests</argument>
+                                <argument>-p</argument>
+                                <argument>*.py</argument>
+                                <argument>-o</argument>
+                                <argument>reports/</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Optionally, skip Java tests using Surefire Plugin if not needed -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.22.2</version>
+                <configuration>
+                    <skipTests>true</skipTests>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+
+Key Points:
+
+exec-maven-plugin is configured to explicitly call the python executable from the virtual environment (${project.basedir}/venv/bin/python).
+
+Python tests are run with xmlrunner, and the results are output to the reports/ directory.
+
+Surefire Plugin is optionally set to skip Java tests if you're not running any Java tests and only using Python tests.
+
+
+
+---
+
+Full Jenkinsfile Configuration
+
+This Jenkinsfile ensures that the Python virtual environment is properly set up and activated. It also ensures that the Python tests are executed using the virtual environment's Python interpreter.
+
+pipeline {
+    agent { label 'linux && region-eu && jdk-17-zulu && python-3.11' }
+
+    environment {
+        PYTHON_ENV = 'venv/bin/python'
+        VENV_DIR = 'venv'
+        REQUIREMENTS_PATH = 'resources/requirements.txt'
+        REPORTS_DIR = 'reports'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                cleanWs() // Clean workspace before starting
+                checkout scm // Checkout the repository code
+            }
+        }
+
+        stage('Setup Python Environment') {
+            steps {
+                script {
+                    sh """
+                    echo "Setting up Python Virtual Environment"
+                    python3.11 -m venv ${VENV_DIR}
+                    source ${VENV_DIR}/bin/activate
+
+                    # Ensure we are using the correct Python
+                    echo "Using Python interpreter: $(which python)"
+                    pip install --upgrade pip
+                    pip install requests-mock unittest-xml-reporting
+
+                    echo "Installed packages:"
+                    pip freeze
+                    """
+                }
+            }
+        }
+
+        stage('Run Python Unittests') {
+            steps {
+                script {
+                    sh """
+                    echo "Running Python tests using xmlrunner..."
+                    mkdir -p ${REPORTS_DIR}
+                    ${VENV_DIR}/bin/python -m xmlrunner discover -s unittests -p "*.py" -o ${REPORTS_DIR}/
+
+                    echo "Listing contents of ${REPORTS_DIR}:"
+                    ls -al ${REPORTS_DIR}
+                    """
+                }
+            }
+        }
+
+        stage('Run Maven Build') {
+            steps {
+                script {
+                    sh """
+                    echo "Running Maven build..."
+                    mvn clean test
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: '**/target/*.jar', allowEmptyArchive: true
+            junit 'reports/TESTS-TestSuite.xml'
+        }
+    }
+}
+
+Key Points:
+
+The virtual environment is explicitly created and activated using python3.11 -m venv venv, and the pip install commands ensure the necessary packages (unittest-xml-reporting and requests-mock) are installed.
+
+The Python tests are run using the explicit path to the Python binary inside the virtual environment (${VENV_DIR}/bin/python).
+
+A Maven build is triggered with mvn clean test to run the Python tests as part of the Maven build process.
+
+
+
+---
+
+Final Notes:
+
+1. Activate the Virtual Environment Properly: The key step in both files is to make sure the correct Python interpreter from the virtual environment is being used. By specifying the path explicitly (${project.basedir}/venv/bin/python), we ensure no ambiguity.
+
+
+2. Use Consistent Paths: Make sure that paths such as venv/bin/python or ${VENV_DIR}/bin/python are consistently referenced both in the pom.xml and Jenkinsfile.
+
+
+3. Validate Python Environment: Run the pipeline to validate that the Python virtual environment is activated correctly and the tests are being executed from the virtual environment, not the global Python installation.
+
+
+
+Once these steps are set up, your tests should run correctly, and the No module named xmlrunner error should be resolved.
+
+Let me know if you face any further issues!
+
