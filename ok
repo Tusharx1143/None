@@ -1,0 +1,36 @@
+<plugin>
+    <groupId>org.codehaus.mojo</groupId>
+    <artifactId>exec-maven-plugin</artifactId>
+    <version>3.0.0</version>
+    <executions>
+        <execution>
+            <id>activate-venv</id>
+            <phase>test</phase>
+            <goals>
+                <goal>exec</goal>
+            </goals>
+            <configuration>
+                <executable>bash</executable>
+                <arguments>
+                    <argument>-c</argument>
+                    <argument>source ${project.basedir}/venv/bin/activate</argument>
+                </arguments>
+            </configuration>
+        </execution>
+
+        <execution>
+            <id>run-tests</id>
+            <phase>test</phase>
+            <goals>
+                <goal>exec</goal>
+            </goals>
+            <configuration>
+                <executable>bash</executable>
+                <arguments>
+                    <argument>-c</argument>
+                    <argument>python -m xmlrunner discover -s unittests -p "*.py" -o reports/</argument>
+                </arguments>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
