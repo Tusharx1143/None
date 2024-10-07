@@ -1,1 +1,33 @@
+{
+  "applicationSet": "PPM",
+  "applicationName": "PPM",
+  "applicationSetCmdbApplicationInstances": [],
+  "applicationSetResourceTypes": [
+    {
+      "resourceType": "PPM Administration",
+      "attributes": [
+        {
+          "attribute": "Access Level",
+          "dataType": "String"
+        }
+      ],
+      "actions": [
+        {
+          "action": "View",
+          "description": "View access",
+          "responseValue": "read",
+          "actionType": "read"
+        },
+        {
+          "action": "Edit",
+          "description": "Edit access",
+          "responseValue": "write",
+          "actionType": "write"
+        }
+      ]
+    }
+  ],
+  "cmdbApplicationId": "e8767abe4f348700c5ce44f18110c764",
+  "cmdbApplicationDescription": "PPM"
+}
 
