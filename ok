@@ -1,1 +1,26 @@
+{
+  "applicationSet": "PPM",
+  "applicationName": "PPM",
+  "applicationSetResourceTypes": [
+    {
+      "resourceType": "RODAN",
+      "attributes": [
+        {
+          "attribute": "Listing",
+          "dataType": "String"
+        }
+      ],
+      "actions": [
+        {
+          "action": "ReadOnly",
+          "description": "read_only",
+          "responseValue": "read_only",
+          "actionType": "read"
+        }
+      ]
+    }
+  ],
+  "cmdbApplicationId": "e8767abe4f348700c5ce44f18110c764",
+  "cmdbApplicationDescription": "ppm testing"
+}
 
