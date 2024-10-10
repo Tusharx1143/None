@@ -1,28 +1,35 @@
 {
-  "applicationSet": "PPM",
-  "applicationName": "PPM",
-  "applicationSetCmdbApplicationInstances": [],  // Leave this as an empty array
-  "applicationSetResourceTypes": [
-    {
-      "resourceType": "Rodan",  // Set your resource type, e.g., "Rodan"
-      "attributes": [
+    "applicationSet": "PPM",
+    "applicationName": "PPM",
+    "applicationSetCmdbApplicationInstances": [
         {
-          "attribute": "Attribute Type 1",
-          "dataType": "String"
+            "cmdbApplicationInstance": {
+                "cmdbApplicationInstanceDescription": "Instance Description",
+                "cmdbApplicationInstanceId": "sampleInstanceId"  // use a sample ID for testing
+            }
         }
-      ],
-      "actions": [
+    ],
+    "applicationSetResourceTypes": [
         {
-          "action": {
-            "action": "View",
-            "description": "View access",
-            "responseValue": "view",
-            "actionType": "view"
-          }
+            "resourceType": "RODAN",
+            "attributes": [
+                {
+                    "attribute": "Attribute Type",
+                    "dataType": "String"
+                }
+            ],
+            "actions": [
+                {
+                    "action": {
+                        "action": "ReadOnly",
+                        "description": "read_only",
+                        "responseValue": "read_only",
+                        "actionType": "read"
+                    }
+                }
+            ]
         }
-      ]
-    }
-  ],
-  "cmdbApplicationId": "e8767abe4f348700c5ce44f18110c764",
-  "cmdbApplicationDescription": "PPM"
+    ],
+    "cmdbApplicationId": "sampleAppId",  // use a placeholder ID for testing
+    "cmdbApplicationDescription": "PPM"
 }
