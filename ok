@@ -1,1 +1,22 @@
+{
+    "applicationSet": "PPM",
+    "applicationName": "PPM",
+    "cmdbApplicationId": "e8767abe4f348700c5ce44f18110c764",
+    "applicationSetResourceTypes": [
+        {
+            "resourceType": "RODAN",
+            "attributes": [
+                {
+                    "attribute": "List",
+                    "dataType": "String"
+                }
+            ],
+            "actions": [
+                {
+                    "action": "ReadOnly"
+                }
+            ]
+        }
+    ]
+}
 
