@@ -1,1 +1,40 @@
 
+{
+  "applicationSet": "Your_Application_Set_Name",
+  "applicationName": "Your_Application_Name",
+  "cmdbApplicationId": "Your_Application_ID",
+  "cmdbApplicationDescription": "Your_Application_Description",
+  "applicationSetCmdbApplicationInstances": [
+    {
+      "cmdbApplicationInstance": {
+        "cmdbApplicationInstanceDescription": "Instance Description",
+        "cmdbApplicationInstanceId": "Instance_ID"
+      }
+    }
+  ],
+  "applicationSetResourceTypes": [
+    {
+      "resourceType": "Resource_Type_Name",
+      "attributes": [
+        {
+          "attribute": "Attribute Type 1",
+          "dataType": "String"
+        },
+        {
+          "attribute": "Attribute Type 2",
+          "dataType": "Numeric"
+        }
+      ],
+      "actions": [
+        {
+          "action": {
+            "action": "ReadOnly",
+            "description": "read_only",
+            "responseValue": "read_only",
+            "actionType": "read"
+          }
+        }
+      ]
+    }
+  ]
+}
