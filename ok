@@ -1,1 +1,37 @@
+{
+  "applicationSet": "PPM",
+  "applicationName": "PPM Application",
+  "cmdbApplicationId": "e8767abe4f348700c5ce44f18110c764",
+  "applicationSetCmdApplicationInstances": [
+    {
+      "cmdbApplicationInstance": {
+        "cmdbApplicationInstanceDescription": "PPM Instance",
+        "cmdbApplicationInstanceId": "e8767abe4f348700c5ce44f18110c764", // Replace with a valid instance ID
+        "cmdbApplication": {
+          "cmdbApplicationId": "e8767abe4f348700c5ce44f18110c764",
+          "cmdbApplicationDescription": "PPM Application"
+        }
+      }
+    }
+  ],
+  "applicationSetResourceTypes": [
+    {
+      "resourceType": "RODAN",
+      "attributes": [
+        {
+          "attribute": "ListA",
+          "dataType": "String"
+        }
+      ],
+      "actions": [
+        {
+          "action": "ReadOnly",
+          "description": "Read Only Access",
+          "responseValue": "read_only",
+          "actionType": "read"
+        }
+      ]
+    }
+  ]
+}
 
