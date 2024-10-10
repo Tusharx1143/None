@@ -1,0 +1,28 @@
+{
+  "applicationSet": "PPM",
+  "applicationName": "PPM",
+  "applicationSetCmdbApplicationInstances": [],  // Leave this as an empty array
+  "applicationSetResourceTypes": [
+    {
+      "resourceType": "Rodan",  // Set your resource type, e.g., "Rodan"
+      "attributes": [
+        {
+          "attribute": "Attribute Type 1",
+          "dataType": "String"
+        }
+      ],
+      "actions": [
+        {
+          "action": {
+            "action": "View",
+            "description": "View access",
+            "responseValue": "view",
+            "actionType": "view"
+          }
+        }
+      ]
+    }
+  ],
+  "cmdbApplicationId": "e8767abe4f348700c5ce44f18110c764",
+  "cmdbApplicationDescription": "PPM"
+}
