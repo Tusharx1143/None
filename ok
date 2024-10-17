@@ -1,1 +1,49 @@
+<script>
+    function populateFields() {
+        var select = document.getElementById("app_name");
+        var selectedOption = select.options[select.selectedIndex];
+        var sysId = selectedOption.value;
+        var clientId = selectedOption.getAttribute("data-clientid");
+        var clientSecret = selectedOption.getAttribute("data-clientsecret");
+
+        // Populate the fields
+        document.getElementById("app_sysid").value = sysId;
+        document.getElementById("client_id").value = clientId;
+        document.getElementById("client_secret").value = clientSecret;
+
+        // Adjust input widths based on content
+        adjustInputWidth(document.getElementById("app_sysid"));
+        adjustInputWidth(document.getElementById("client_id"));
+        adjustInputWidth(document.getElementById("client_secret"));
+    }
+
+    function adjustInputWidth(input) {
+        // Create a temporary element to measure the content width
+        var tempElement = document.createElement("span");
+        tempElement.style.visibility = "hidden";
+        tempElement.style.position = "absolute";
+        tempElement.style.whiteSpace = "pre";
+        tempElement.style.font = window.getComputedStyle(input).font;
+        
+        // Set the text content to match the input's value
+        tempElement.textContent = input.value || input.placeholder;
+        
+        // Append it to the body for measurement, then remove it
+        document.body.appendChild(tempElement);
+        var width = tempElement.offsetWidth + 20;  // Add some padding
+        document.body.removeChild(tempElement);
+        
+        // Set the input width
+        input.style.width = width + "px";
+    }
+
+    // Adjust input width on input event (for dynamic typing as well)
+    document.getElementById("client_id").addEventListener('input', function() {
+        adjustInputWidth(this);
+    });
+
+    document.getElementById("client_secret").addEventListener('input', function() {
+        adjustInputWidth(this);
+    });
+</script>
 
