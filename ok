@@ -1,0 +1,62 @@
+        <legend>ClientID Update Form</legend>
+        <table>
+            <tr>
+                <td class="Lbl"><label for="app_name">Application Name:</label></td>
+                <td>
+                    <select id="app_name" name="app_name" class="form-control" onchange="populateFields()">
+                        <option value="">Select an application</option>
+                        {% for sysid, app in apps.items() %}
+                            <option value="{{ sysid }}" data-clientid="{{ app['ClientID'] }}" data-clientsecret="{{ app['ClientSecret'] }}">
+                                {{ app['Application'] }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td class="Lbl"><label for="app_sysid">Application Sys ID:</label></td>
+                <td><input type="text" id="app_sysid" name="app_sysid" class="form-control" readonly></td>
+            </tr>
+            <tr>
+                <td class="Lbl"><label for="client_id">ClientID:</label></td>
+                <td><input type="text" id="client_id" name="client_id" class="form-control"></td>
+            </tr>
+            <tr>
+                <td class="Lbl"><label for="client_secret">Client Secret:</label></td>
+                <td><input type="text" id="client_secret" name="client_secret" class="form-control"></td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <input type="submit" value="Update">
+                </td>
+            </tr>
+        </table>
+    </fieldset>
+
+    <div style="text-align: left; padding-top: 5px;">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div style="background-color: #ffffcc; border: 1px solid #cccc99; padding: 10px; margin-top: 10px;">
+                    {% for message in messages %}
+                        {{ message }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+</form>
+
+<script>
+    function populateFields() {
+        var select = document.getElementById("app_name");
+        var selectedOption = select.options[select.selectedIndex];
+        var sysId = selectedOption.value;
+        var clientId = selectedOption.getAttribute("data-clientid");
+        var clientSecret = selectedOption.getAttribute("data-clientsecret");
+
+        // Populate the fields
+        document.getElementById("app_sysid").value = sysId;
+        document.getElementById("client_id").value = clientId;
+        document.getElementById("client_secret").value = clientSecret;
+    }
+</script>
