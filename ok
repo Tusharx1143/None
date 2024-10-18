@@ -1,1 +1,131 @@
+As you all know, Diwali is around the corner, and we’re gearing up for our bay decoration! We’re looking for volunteers to help make our bay the best one this year. If you’re interested in being part of this exciting project, please let me know by 4 PM today, and I’ll add you to the group.
+
+Our theme this year is truly superb, and we’re aiming for our bay to be the Bay of the Year! Let’s make it happen together.
+
+Looking forward to your enthusiastic participation!
+
+
+
+
+
+
+
+
+
+import json
+import requests
+from http import HTTPStatus
+import logging
+import xmltodict
+from requests.auth import HTTPBasicAuth
+from config import config
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+_log = logging.getLogger('asset_script')
+
+# API configuration
+headers = {"Content-Type": "application/json"}
+
+# Asset Store API details
+asset_store_url = "http://eun040312.nomura.com:9095/asset/api/v1/applicationsets"
+asset_store_user = config.get_arg("assetstore.user")
+asset_store_password = config.get_arg("assetstore.password")
+
+# RODAN API details
+rodan_url = config.get_arg("rodan.url") + "/entitlements"
+rodan_user = config.get_arg("rodan.user")
+rodan_password = config.get_arg("rodan.password")
+
+# Function to create an Application Set
+def create_application_set():
+    application_set_data = {
+        "applicationSet": "PPM",
+        "applicationName": "PPM",
+        "cmdbApplicationId": "e8767abe4f348700c5ce44f18110c764",
+        "applicationSetResourceTypes": [
+            {
+                "resourceType": "RODAN",
+                "attributes": [{"attribute": "List", "dataType": "String"}],
+                "actions": [{"action": "ReadOnly"}]
+            }
+        ]
+    }
+    try:
+        response = requests.post(
+            asset_store_url,
+            headers=headers,
+            data=json.dumps(application_set_data),
+            auth=HTTPBasicAuth(asset_store_user, asset_store_password)
+        )
+        response.raise_for_status()
+        _log.info("Application Set created successfully.")
+        return response.json().get('id')
+    except requests.exceptions.RequestException as e:
+        _log.error(f"Failed to create Application Set: {e}")
+        return None
+
+# Function to fetch entitlements from RODAN
+def get_entitlements(resource, action_filter):
+    query_url = f"{rodan_url}?resource={resource}"
+    if action_filter:
+        query_url += f"&action={action_filter}"
+
+    try:
+        response = requests.get(
+            query_url,
+            auth=HTTPBasicAuth(rodan_user, rodan_password)
+        )
+        response.raise_for_status()
+        entitlements = xmltodict.parse(response.text, force_list={'entitlement'})
+        _log.info(f"Fetched entitlements: {entitlements}")
+        return entitlements
+    except requests.exceptions.RequestException as e:
+        _log.error(f"Failed to fetch entitlements: {e}")
+        return None
+
+# Function to add resource to the Application Set
+def add_resource_to_application_set(application_set_id, resource):
+    add_resource_url = f"{asset_store_url}/{application_set_id}/resources"
+    resource_data = {
+        "applicationSet": "PPM",
+        "cmdbApplicationId": "e8767abe4f348700c5ce44f18110c764",
+        "resourceType": "RODAN",
+        "attributes": [{"attribute": resource, "dataType": "String"}],
+        "actions": [{"action": "ReadOnly"}]
+    }
+    try:
+        response = requests.post(
+            add_resource_url,
+            headers=headers,
+            data=json.dumps(resource_data),
+            auth=HTTPBasicAuth(asset_store_user, asset_store_password)
+        )
+        response.raise_for_status()
+        _log.info("Resource added to Application Set successfully.")
+    except requests.exceptions.RequestException as e:
+        _log.error(f"Failed to add resource to Application Set: {e}")
+
+def main():
+    # Step 1: Create Application Set
+    app_set_id = create_application_set()
+    if not app_set_id:
+        _log.error("Exiting due to failure in Application Set creation.")
+        return
+
+    # Step 2: Fetch entitlements from RODAN
+    entitlements = get_entitlements("/ppm/PPM/Administration/Resource", "View")
+    if not entitlements:
+        _log.error("Exiting due to failure in fetching entitlements.")
+        return
+
+    # Step 3: Add entitlements resource to Application Set
+    for entitlement in entitlements.get('entitlements', {}).get('entitlement', []):
+        resource = entitlement.get('resource')
+        add_resource_to_application_set(app_set_id, resource)
+
+if __name__ == "__main__":
+    main()
+
+
 
